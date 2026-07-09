@@ -29,33 +29,97 @@ private struct RootView: View {
 }
 
 private struct MainTabView: View {
+    @State private var selectedTab: MainNavigationTab = .home
+    @State private var showsRecordingFlow = false
+
     var body: some View {
-        TabView {
-            HomeView()
-                .tabItem {
-                    Label("홈", systemImage: "house.fill")
+        VStack(spacing: 0) {
+            selectedView
+
+            Divider()
+
+            HStack(spacing: 16) {
+                ForEach(MainNavigationTab.allCases) { tab in
+                    Button {
+                        selectedTab = tab
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: tab.systemImage)
+                                .font(.title3)
+
+                            Text(tab.title)
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .foregroundStyle(selectedTab == tab ? AICOTheme.primaryOrange : .secondary)
+                    }
+                    .buttonStyle(.plain)
                 }
 
-            RecordingEntryView()
-                .tabItem {
-                    Label("기록", systemImage: "square.and.pencil")
+                Button {
+                    showsRecordingFlow = true
+                } label: {
+                    Label("기록", systemImage: "plus")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 13)
+                        .background(AICOTheme.primaryOrange)
+                        .clipShape(Capsule())
                 }
-
-            ArchiveView()
-                .tabItem {
-                    Label("아카이브", systemImage: "archivebox.fill")
-                }
-
-            ReportView()
-                .tabItem {
-                    Label("리포트", systemImage: "chart.bar.xaxis")
-                }
-
-            SettingsView()
-                .tabItem {
-                    Label("설정", systemImage: "gearshape.fill")
-                }
+                .accessibilityLabel("기록 시작")
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 12)
+            .padding(.bottom, 12)
+            .background(.regularMaterial)
         }
-        .tint(AICOTheme.primaryOrange)
+        .sheet(isPresented: $showsRecordingFlow) {
+            RecordingEntryView()
+        }
+    }
+
+    @ViewBuilder
+    private var selectedView: some View {
+        switch selectedTab {
+        case .home:
+            HomeView()
+        case .archive:
+            ArchiveView()
+        case .report:
+            ReportView()
+        }
+    }
+}
+
+private enum MainNavigationTab: CaseIterable, Identifiable {
+    case home
+    case archive
+    case report
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .home:
+            "홈"
+        case .archive:
+            "아카이브"
+        case .report:
+            "리포트"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .home:
+            "house.fill"
+        case .archive:
+            "archivebox.fill"
+        case .report:
+            "chart.bar.xaxis"
+        }
     }
 }

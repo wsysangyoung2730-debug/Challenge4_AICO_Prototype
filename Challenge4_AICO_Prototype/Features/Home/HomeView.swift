@@ -7,7 +7,7 @@ struct HomeView: View {
 
     @State private var selectedRecord: RecordEntry?
     @State private var selectedInfoItem: HomeInfoFeedItem?
-    @State private var showsRecordingPlaceholder = false
+    @State private var showsSettings = false
 
     private var recentRecords: [RecordEntry] {
         Array(records.prefix(5))
@@ -48,7 +48,6 @@ struct HomeView: View {
                         recentRecordsSection
                         reportPreviewSection
                         informationFeedSection
-                        quickActionSection
                     }
                 }
                 .background(AICOTheme.softBackground)
@@ -63,10 +62,11 @@ struct HomeView: View {
                         .accessibilityLabel("알림")
 
                         Button {
+                            showsSettings = true
                         } label: {
-                            Image(systemName: "person.crop.circle")
+                            Image(systemName: "gearshape")
                         }
-                        .accessibilityLabel("프로필 및 설정")
+                        .accessibilityLabel("설정")
                     }
                 }
 
@@ -82,10 +82,8 @@ struct HomeView: View {
             .sheet(item: $selectedInfoItem) { item in
                 HomeInfoFeedDetailView(item: item)
             }
-            .alert("기록 기능 안내", isPresented: $showsRecordingPlaceholder) {
-                Button("확인", role: .cancel) {}
-            } message: {
-                Text("기록 기능은 다음 단계에서 대상자 등록과 함께 구현됩니다.")
+            .sheet(isPresented: $showsSettings) {
+                SettingsView()
             }
         }
     }
@@ -234,30 +232,6 @@ struct HomeView: View {
         }
     }
 
-    private var quickActionSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("필요할 때 바로 기록을 준비해요")
-                .font(.headline)
-
-            Button {
-                showsRecordingPlaceholder = true
-            } label: {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                    Text("기록 시작하기")
-                        .fontWeight(.semibold)
-                    Spacer()
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(AICOTheme.primaryOrange)
-        }
-        .padding(AICOTheme.screenPadding)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AICOTheme.sectionBackground)
-    }
 }
 
 private struct DashboardSection<Content: View>: View {

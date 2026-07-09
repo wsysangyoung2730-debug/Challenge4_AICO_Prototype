@@ -8,7 +8,7 @@ struct HomeTutorialOverlayView: View {
     private let steps = [
         HomeTutorialStep(
             title: "최근 기록을 확인해요",
-            description: "가장 최근에 남긴 기록 5개를 빠르게 확인할 수 있어요.",
+            description: "가장 최근에 남긴 기록을 빠르게 확인할 수 있어요.",
             targetLabel: "최근 기록"
         ),
         HomeTutorialStep(
@@ -23,13 +23,18 @@ struct HomeTutorialOverlayView: View {
         ),
         HomeTutorialStep(
             title: "알림과 설정을 관리해요",
-            description: "알림, 프로필, 설정으로 이동할 수 있어요.",
+            description: "오른쪽 상단에서 알림과 설정으로 이동할 수 있어요.",
             targetLabel: "상단 아이콘"
         ),
         HomeTutorialStep(
-            title: "필요할 때 기록을 시작해요",
-            description: "실제 기록은 대상자 등록 후 사용할 수 있어요.",
-            targetLabel: "기록 시작하기"
+            title: "필요한 화면으로 이동해요",
+            description: "홈, 아카이브, 리포트를 하단 메뉴에서 이동할 수 있어요.",
+            targetLabel: "하단 메뉴"
+        ),
+        HomeTutorialStep(
+            title: "기록은 + 버튼에서 시작해요",
+            description: "주황색 + 기록 버튼을 눌러 기록 흐름으로 이동할 수 있어요.",
+            targetLabel: "+ 기록"
         )
     ]
 
