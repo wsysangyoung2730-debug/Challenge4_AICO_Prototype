@@ -64,6 +64,7 @@ AICO는 자폐스펙트럼 대상자의 보호자가 대상자의 상황, 행동
 ## Prototype Scope
 
 - UI flow and data structure exploration
+- Phase 1 app foundation with SwiftData models, local anonymous state, service intro gate, and tab placeholders
 - No production authentication
 - No CloudKit Sharing
 - No real medical decision-making
@@ -84,24 +85,36 @@ Challenge4_AICO_Prototype/
 │   │   │   ├── RecordEntry.swift
 │   │   │   ├── RecordCategory.swift
 │   │   │   └── ReportSummary.swift
+│   │   ├── Persistence/
+│   │   │   └── SwiftDataContainer.swift
+│   │   ├── State/
+│   │   │   └── AnonymousSessionState.swift
 │   │   └── Constants/
 │   │       └── AppConstants.swift
 │   ├── Features/
 │   │   ├── Onboarding/
+│   │   │   └── ServiceIntroView.swift
 │   │   ├── Home/
 │   │   │   └── HomeView.swift
 │   │   ├── Recording/
+│   │   │   └── RecordingEntryView.swift
 │   │   ├── Archive/
+│   │   │   └── ArchiveView.swift
 │   │   ├── Report/
+│   │   │   └── ReportView.swift
 │   │   └── Settings/
+│   │       └── SettingsView.swift
 │   ├── Shared/
 │   │   ├── Components/
+│   │   │   └── PlaceholderCardView.swift
 │   │   └── DesignSystem/
+│   │       └── AICOTheme.swift
 │   └── Resources/
 │       └── Assets.xcassets/
 └── Docs/
     ├── product-flow.md
-    └── git-convention.md
+    ├── git-convention.md
+    └── phase-plan.md
 ```
 
 ## Git Strategy
@@ -159,6 +172,7 @@ feat/#1-loginUI
 ## Development Notes
 
 - 현재는 SwiftUI 소스 스켈레톤과 정보 구조 검증을 위한 문서 중심으로 구성합니다.
+- Phase 1에서는 SwiftData 컨테이너, 로컬 익명 상태, 서비스 소개 화면, 5개 탭 placeholder를 구현했습니다.
 - 실제 Xcode 프로젝트 파일은 개발 환경에서 생성 후 이 소스 구조를 연결합니다.
 - 프로덕션 인증, CloudKit Sharing, 의료 판단 기능은 구현하지 않습니다.
 - 실제 사용자나 대상자의 민감 정보를 테스트 데이터로 사용하지 않습니다.
