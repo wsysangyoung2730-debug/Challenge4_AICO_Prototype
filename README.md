@@ -65,6 +65,7 @@ AICO는 자폐스펙트럼 대상자의 보호자가 대상자의 상황, 행동
 
 - UI flow and data structure exploration
 - Phase 1 app foundation with SwiftData models, local anonymous state, service intro gate, and tab placeholders
+- Phase 2 home dashboard, refined service intro, static information feed, and first-time Home tutorial overlay
 - No production authentication
 - No CloudKit Sharing
 - No real medical decision-making
@@ -173,6 +174,7 @@ feat/#1-loginUI
 
 - 현재는 SwiftUI 소스 스켈레톤과 정보 구조 검증을 위한 문서 중심으로 구성합니다.
 - Phase 1에서는 SwiftData 컨테이너, 로컬 익명 상태, 서비스 소개 화면, 5개 탭 placeholder를 구현했습니다.
+- Phase 2에서는 서비스 소개를 다듬고 홈 대시보드, 최근 기록/간단 리포트/정보 피드 미리보기, 1회성 홈 튜토리얼 오버레이를 구현했습니다.
 - 실제 Xcode 프로젝트 파일은 개발 환경에서 생성 후 이 소스 구조를 연결합니다.
 - 프로덕션 인증, CloudKit Sharing, 의료 판단 기능은 구현하지 않습니다.
 - 실제 사용자나 대상자의 민감 정보를 테스트 데이터로 사용하지 않습니다.

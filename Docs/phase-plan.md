@@ -13,6 +13,8 @@
 - Service intro refinement
 - Home screen content structure
 - First-time overlay tutorial
+- Static information feed preview
+- Recent record and weekly count preview using local SwiftData records when available
 
 ## Phase 3
 

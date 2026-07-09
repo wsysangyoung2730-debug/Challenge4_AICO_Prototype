@@ -22,7 +22,7 @@ struct PlaceholderCardView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.white)
+        .background(AICOTheme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
         .overlay {
             RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
