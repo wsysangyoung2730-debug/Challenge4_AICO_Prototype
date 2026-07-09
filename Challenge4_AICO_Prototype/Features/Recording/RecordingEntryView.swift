@@ -7,15 +7,14 @@ struct RecordingEntryView: View {
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
     @Query(sort: \RecordCategory.createdAt) private var categories: [RecordCategory]
 
-    private var activeRecipient: RecipientProfile? {
-        recipients.first
-    }
-
     var body: some View {
         Group {
-            if let activeRecipient {
+            if let activeRecipient = recipients.first {
                 ZStack {
-                    ABCRecordingFlowView(recipient: activeRecipient)
+                    ABCRecordingFlowView(
+                        recipients: recipients,
+                        initialRecipient: activeRecipient
+                    )
 
                     if !sessionState.hasSeenRecordingTutorial {
                         RecordingTutorialOverlayView {
@@ -27,7 +26,6 @@ struct RecordingEntryView: View {
                 RecipientRegistrationView()
             }
         }
-        .navigationTitle("기록")
         .background(AICOTheme.softBackground)
         .onAppear {
             seedDefaultCategoriesIfNeeded()

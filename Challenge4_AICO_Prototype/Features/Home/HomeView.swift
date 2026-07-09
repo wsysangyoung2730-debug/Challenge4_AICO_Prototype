@@ -155,20 +155,23 @@ struct HomeView: View {
                     systemImage: "clock.fill"
                 )
             } else {
-                VStack(spacing: 10) {
-                    ForEach(recentRecords) { record in
-                        NavigationLink {
-                            RecordDetailView(
-                                record: record,
-                                recipientName: recipientName(for: record)
-                            )
-                        } label: {
-                            RecentRecordPreviewCard(
-                                record: record,
-                                recipientName: recipientName(for: record)
-                            )
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(recentRecords) { record in
+                            NavigationLink {
+                                RecordDetailView(
+                                    record: record,
+                                    recipientName: recipientName(for: record)
+                                )
+                            } label: {
+                                RecentRecordPreviewCard(
+                                    record: record,
+                                    recipientName: recipientName(for: record)
+                                )
+                                .frame(width: 270)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -347,6 +350,10 @@ private struct RecentRecordPreviewCard: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AICOTheme.cardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
+                .stroke(AICOTheme.primaryOrange.opacity(0.22), lineWidth: 1)
+        }
         .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
     }
 

@@ -90,12 +90,30 @@ struct RecordDetailView: View {
 
     private var attachmentSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("첨부 placeholder")
+            Text("첨부 사진")
                 .font(.headline)
 
-            Label("사진/영상 첨부 자리는 확인용이며 실제 파일은 저장하지 않았어요.", systemImage: "paperclip")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(record.attachmentNames, id: \.self) { fileName in
+                        if let image = ImageStorageService.image(for: fileName) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 96, height: 96)
+                                .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+                        } else {
+                            RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
+                                .fill(AICOTheme.softOrangeBackground)
+                                .frame(width: 96, height: 96)
+                                .overlay {
+                                    Image(systemName: "photo")
+                                        .foregroundStyle(AICOTheme.primaryOrange)
+                                }
+                        }
+                    }
+                }
+            }
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)

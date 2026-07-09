@@ -37,17 +37,10 @@ struct CategorySelectionStepView: View {
                 .buttonStyle(.bordered)
                 .tint(AICOTheme.primaryOrange)
             }
-
-            if selectedNames.isEmpty {
-                Text("여러 항목을 선택할 수 있어요.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("\(selectedNames.count)개 선택됨")
-                    .font(.footnote)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(AICOTheme.primaryOrange)
-            }
+            Text(selectedNames.isEmpty ? "항목을 선택하면 아래에서 다음 단계로 이동할 수 있어요." : "\(selectedNames.count)개 선택됨")
+                .font(.footnote)
+                .fontWeight(selectedNames.isEmpty ? .regular : .semibold)
+                .foregroundStyle(selectedNames.isEmpty ? .secondary : AICOTheme.primaryOrange)
         }
     }
 

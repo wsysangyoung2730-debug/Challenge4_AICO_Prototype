@@ -100,10 +100,6 @@ struct ArchiveView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("아카이브")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-
             Text("저장된 A/B/C 기록을 조건별로 다시 살펴봐요.")
                 .font(.body)
                 .foregroundStyle(.secondary)

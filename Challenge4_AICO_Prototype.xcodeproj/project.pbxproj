@@ -34,6 +34,7 @@
 		100000000000000000000019 /* ArchiveFilterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000119 /* ArchiveFilterView.swift */; };
 		10000000000000000000001A /* ArchiveRecordCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011A /* ArchiveRecordCardView.swift */; };
 		10000000000000000000001B /* RecordDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011B /* RecordDetailView.swift */; };
+		10000000000000000000001C /* ImageStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011C /* ImageStorageService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -65,6 +66,7 @@
 		100000000000000000000119 /* ArchiveFilterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveFilterView.swift; sourceTree = "<group>"; };
 		10000000000000000000011A /* ArchiveRecordCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveRecordCardView.swift; sourceTree = "<group>"; };
 		10000000000000000000011B /* RecordDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordDetailView.swift; sourceTree = "<group>"; };
+		10000000000000000000011C /* ImageStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStorageService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +123,7 @@
 				100000000000000000000212 /* Models */,
 				100000000000000000000213 /* Persistence */,
 				100000000000000000000214 /* State */,
+				100000000000000000000215 /* Utilities */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -188,6 +191,14 @@
 				100000000000000000000108 /* AnonymousSessionState.swift */,
 			);
 			path = State;
+			sourceTree = "<group>";
+		};
+		100000000000000000000215 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				10000000000000000000011C /* ImageStorageService.swift */,
+			);
+			path = Utilities;
 			sourceTree = "<group>";
 		};
 		100000000000000000000221 /* Onboarding */ = {
@@ -355,6 +366,7 @@
 				100000000000000000000019 /* ArchiveFilterView.swift in Sources */,
 				10000000000000000000001A /* ArchiveRecordCardView.swift in Sources */,
 				10000000000000000000001B /* RecordDetailView.swift in Sources */,
+				10000000000000000000001C /* ImageStorageService.swift in Sources */,
 				10000000000000000000000F /* ReportView.swift in Sources */,
 				100000000000000000000010 /* SettingsView.swift in Sources */,
 				100000000000000000000011 /* PlaceholderCardView.swift in Sources */,
