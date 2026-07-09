@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import PhotosUI
 
 struct RecipientRegistrationView: View {
     @Environment(\.modelContext) private var modelContext
@@ -9,6 +10,8 @@ struct RecipientRegistrationView: View {
     @State private var gender = "기타 / 선택 안 함"
     @State private var autismTraits = ""
     @State private var validationMessage: String?
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var profileImageName: String?
 
     private let genderOptions = ["남아", "여아", "기타 / 선택 안 함"]
 
@@ -25,6 +28,9 @@ struct RecipientRegistrationView: View {
         }
         .background(AICOTheme.softBackground)
         .navigationTitle("대상자 등록")
+        .onChange(of: selectedPhotoItem) {
+            Task { await saveSelectedProfileImage() }
+        }
     }
 
     private var header: some View {
@@ -101,20 +107,16 @@ struct RecipientRegistrationView: View {
 
     private var profileImagePlaceholder: some View {
         HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 18)
-                .fill(AICOTheme.softOrangeBackground)
-                .frame(width: 64, height: 64)
-                .overlay {
-                    Image(systemName: "person.crop.circle")
-                        .font(.largeTitle)
+            profileAvatar
+
+            VStack(alignment: .leading, spacing: 4) {
+                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                    Text(profileImageName == nil ? "프로필 이미지 선택" : "프로필 이미지 변경")
+                        .font(.headline)
                         .foregroundStyle(AICOTheme.primaryOrange)
                 }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("프로필 이미지")
-                    .font(.headline)
-
-                Text("Phase 3에서는 실제 사진 업로드 없이 자리만 확인합니다.")
+                Text("선택한 이미지는 앱 내부 로컬 저장소에만 보관됩니다.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -123,6 +125,24 @@ struct RecipientRegistrationView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AICOTheme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+    }
+
+    private var profileAvatar: some View {
+        Group {
+            if let image = ImageStorageService.image(for: profileImageName) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Image(systemName: "person.crop.circle")
+                    .font(.largeTitle)
+                    .foregroundStyle(AICOTheme.primaryOrange)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(AICOTheme.softOrangeBackground)
+            }
+        }
+        .frame(width: 64, height: 64)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 
     private var saveButton: some View {
@@ -153,12 +173,24 @@ struct RecipientRegistrationView: View {
             age: age,
             gender: normalizedGender,
             autismTraits: trimmedTraits.isEmpty ? nil : trimmedTraits,
-            profileImageName: nil
+            profileImageName: profileImageName
         )
 
         modelContext.insert(recipient)
         try? modelContext.save()
         validationMessage = nil
+    }
+
+    @MainActor
+    private func saveSelectedProfileImage() async {
+        guard let selectedPhotoItem else { return }
+        do {
+            guard let data = try await selectedPhotoItem.loadTransferable(type: Data.self) else { return }
+            ImageStorageService.deleteImage(named: profileImageName)
+            profileImageName = try ImageStorageService.saveImageData(data, prefix: "recipient")
+        } catch {
+            validationMessage = "이미지를 불러오지 못했어요. 다시 선택해주세요."
+        }
     }
 }
 
