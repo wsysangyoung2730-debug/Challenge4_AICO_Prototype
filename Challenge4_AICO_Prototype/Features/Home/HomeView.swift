@@ -43,17 +43,17 @@ struct HomeView: View {
         NavigationStack {
             ZStack {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: AICOTheme.sectionSpacing) {
+                    VStack(alignment: .leading, spacing: 0) {
                         headerSection
                         recentRecordsSection
                         reportPreviewSection
                         informationFeedSection
                         quickActionSection
                     }
-                    .padding(AICOTheme.screenPadding)
                 }
                 .background(AICOTheme.softBackground)
-                .navigationTitle(AppConstants.appName)
+                .navigationTitle("")
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItemGroup(placement: .topBarTrailing) {
                         Button {
@@ -91,30 +91,54 @@ struct HomeView: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("안녕하세요")
-                .font(.headline)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 14) {
+                Image("AICOLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 68, height: 68)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(AICOTheme.primaryOrange.opacity(0.12), lineWidth: 1)
+                    }
 
-            HStack(alignment: .lastTextBaseline) {
-                Text(AppConstants.appName)
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundStyle(AICOTheme.primaryOrange)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(AppConstants.appName)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundStyle(AICOTheme.primaryOrange)
 
-                Spacer()
+                    Text("보호자를 위한 따뜻한 기록 도우미")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             }
 
-            Text("오늘의 기록을 가볍게 확인해볼까요?")
-                .font(.title3)
-                .fontWeight(.semibold)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("안녕하세요")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+
+                Text("오늘의 기록을 가볍게 확인해볼까요?")
+                    .font(.title2)
+                    .fontWeight(.bold)
+            }
         }
+        .padding(.horizontal, AICOTheme.screenPadding)
+        .padding(.top, 18)
+        .padding(.bottom, 24)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AICOTheme.softBackground)
     }
 
     private var recentRecordsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "최근 기록", subtitle: "최근 5개의 기록을 빠르게 확인해요")
-
+        DashboardSection(
+            label: "01",
+            title: "최근 기록",
+            subtitle: "최근 5개의 기록을 빠르게 확인해요",
+            background: AICOTheme.cardBackground
+        ) {
             if recentRecords.isEmpty {
                 PlaceholderCardView(
                     title: "아직 기록이 없어요",
@@ -137,9 +161,12 @@ struct HomeView: View {
     }
 
     private var reportPreviewSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "간단 리포트", subtitle: "이번 주 흐름을 미리 살펴봐요")
-
+        DashboardSection(
+            label: "02",
+            title: "간단 리포트",
+            subtitle: "이번 주 흐름을 미리 살펴봐요",
+            background: AICOTheme.reportBackground
+        ) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Text("이번 주 총 기록 수")
@@ -165,9 +192,12 @@ struct HomeView: View {
     }
 
     private var informationFeedSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "정보 피드", subtitle: "기록에 도움이 되는 내용을 확인해요")
-
+        DashboardSection(
+            label: "03",
+            title: "정보 피드",
+            subtitle: "기록에 도움이 되는 내용을 확인해요",
+            background: AICOTheme.feedBackground
+        ) {
             VStack(spacing: 10) {
                 ForEach(feedItems) { item in
                     Button {
@@ -206,6 +236,9 @@ struct HomeView: View {
 
     private var quickActionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
+            Text("필요할 때 바로 기록을 준비해요")
+                .font(.headline)
+
             Button {
                 showsRecordingPlaceholder = true
             } label: {
@@ -221,23 +254,48 @@ struct HomeView: View {
             .buttonStyle(.borderedProminent)
             .tint(AICOTheme.primaryOrange)
         }
+        .padding(AICOTheme.screenPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AICOTheme.sectionBackground)
     }
 }
 
-private struct SectionHeader: View {
+private struct DashboardSection<Content: View>: View {
+    let label: String
     let title: String
     let subtitle: String
+    let background: Color
+    @ViewBuilder let content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.title3)
-                .fontWeight(.bold)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                Text(label)
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundStyle(AICOTheme.primaryOrange)
+                    .frame(width: 34, height: 34)
+                    .background(AICOTheme.primaryOrange.opacity(0.12))
+                    .clipShape(Circle())
 
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.title2)
+                        .fontWeight(.bold)
+
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+
+            content
         }
+        .padding(AICOTheme.screenPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(background)
     }
 }
 
