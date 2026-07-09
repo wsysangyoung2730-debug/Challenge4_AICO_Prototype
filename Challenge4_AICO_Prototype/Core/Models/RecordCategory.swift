@@ -1,26 +1,40 @@
 import Foundation
+import SwiftData
 
-enum RecordCategoryStage: String, CaseIterable, Hashable {
+enum RecordCategoryStage: String, CaseIterable, Codable, Hashable {
     case antecedent
     case behavior
     case consequence
 }
 
-struct RecordCategory: Identifiable, Hashable {
-    let id: UUID
-    var stage: RecordCategoryStage
+@Model
+final class RecordCategory {
+    @Attribute(.unique) var id: UUID
+    var stageRawValue: String
     var name: String
     var isCustom: Bool
+    var createdAt: Date
+
+    var stage: RecordCategoryStage {
+        get {
+            RecordCategoryStage(rawValue: stageRawValue) ?? .antecedent
+        }
+        set {
+            stageRawValue = newValue.rawValue
+        }
+    }
 
     init(
         id: UUID = UUID(),
         stage: RecordCategoryStage,
         name: String,
-        isCustom: Bool = false
+        isCustom: Bool = false,
+        createdAt: Date = Date()
     ) {
         self.id = id
-        self.stage = stage
+        self.stageRawValue = stage.rawValue
         self.name = name
         self.isCustom = isCustom
+        self.createdAt = createdAt
     }
 }
