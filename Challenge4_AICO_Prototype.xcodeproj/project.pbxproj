@@ -26,6 +26,11 @@
 		100000000000000000000011 /* PlaceholderCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000111 /* PlaceholderCardView.swift */; };
 		100000000000000000000012 /* AICOTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000112 /* AICOTheme.swift */; };
 		100000000000000000000013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000113 /* Assets.xcassets */; };
+		100000000000000000000014 /* RecipientRegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000114 /* RecipientRegistrationView.swift */; };
+		100000000000000000000015 /* RecordingTutorialOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000115 /* RecordingTutorialOverlayView.swift */; };
+		100000000000000000000016 /* ABCRecordingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000116 /* ABCRecordingFlowView.swift */; };
+		100000000000000000000017 /* CategorySelectionStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000117 /* CategorySelectionStepView.swift */; };
+		100000000000000000000018 /* RecordingCompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000118 /* RecordingCompletionView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +54,11 @@
 		100000000000000000000111 /* PlaceholderCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderCardView.swift; sourceTree = "<group>"; };
 		100000000000000000000112 /* AICOTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICOTheme.swift; sourceTree = "<group>"; };
 		100000000000000000000113 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		100000000000000000000114 /* RecipientRegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipientRegistrationView.swift; sourceTree = "<group>"; };
+		100000000000000000000115 /* RecordingTutorialOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingTutorialOverlayView.swift; sourceTree = "<group>"; };
+		100000000000000000000116 /* ABCRecordingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ABCRecordingFlowView.swift; sourceTree = "<group>"; };
+		100000000000000000000117 /* CategorySelectionStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategorySelectionStepView.swift; sourceTree = "<group>"; };
+		100000000000000000000118 /* RecordingCompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingCompletionView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -196,6 +206,11 @@
 			isa = PBXGroup;
 			children = (
 				10000000000000000000010D /* RecordingEntryView.swift */,
+				100000000000000000000114 /* RecipientRegistrationView.swift */,
+				100000000000000000000115 /* RecordingTutorialOverlayView.swift */,
+				100000000000000000000116 /* ABCRecordingFlowView.swift */,
+				100000000000000000000117 /* CategorySelectionStepView.swift */,
+				100000000000000000000118 /* RecordingCompletionView.swift */,
 			);
 			path = Recording;
 			sourceTree = "<group>";
@@ -322,6 +337,11 @@
 				10000000000000000000000B /* HomeTutorialOverlayView.swift in Sources */,
 				10000000000000000000000C /* HomeInfoFeedDetailView.swift in Sources */,
 				10000000000000000000000D /* RecordingEntryView.swift in Sources */,
+				100000000000000000000014 /* RecipientRegistrationView.swift in Sources */,
+				100000000000000000000015 /* RecordingTutorialOverlayView.swift in Sources */,
+				100000000000000000000016 /* ABCRecordingFlowView.swift in Sources */,
+				100000000000000000000017 /* CategorySelectionStepView.swift in Sources */,
+				100000000000000000000018 /* RecordingCompletionView.swift in Sources */,
 				10000000000000000000000E /* ArchiveView.swift in Sources */,
 				10000000000000000000000F /* ReportView.swift in Sources */,
 				100000000000000000000010 /* SettingsView.swift in Sources */,
