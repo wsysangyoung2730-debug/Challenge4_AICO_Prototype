@@ -35,4 +35,8 @@
 
 - Report screen summaries
 - Settings management
+- Daily, weekly, and monthly report views
+- Recipient and custom category management
+- Local notification preference
+- Local prototype data reset with confirmation
 - Prototype polish

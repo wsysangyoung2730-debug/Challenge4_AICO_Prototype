@@ -17,6 +17,26 @@ struct HomeView: View {
         return records.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .weekOfYear) }.count
     }
 
+    private var weeklyRecords: [RecordEntry] {
+        let calendar = Calendar.current
+        return records.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .weekOfYear) }
+    }
+
+    private var weeklyTopBehavior: String {
+        let names = weeklyRecords.flatMap(\.behaviorCategories)
+        let top = Dictionary(grouping: names, by: { $0 })
+            .map { (name: $0.key, count: $0.value.count) }
+            .sorted {
+                if $0.count == $1.count {
+                    return $0.name < $1.name
+                }
+                return $0.count > $1.count
+            }
+            .first
+
+        return top.map { "\($0.name)이 자주 기록되었어요" } ?? "기록이 쌓이면 표시됩니다"
+    }
+
     private let feedItems = [
         HomeInfoFeedItem(
             title: "A/B/C 기록이란?",
@@ -177,8 +197,17 @@ struct HomeView: View {
 
                 Divider()
 
-                ReportPreviewRow(title: "주목할 만한 변화", value: "기록이 쌓이면 표시됩니다")
-                ReportPreviewRow(title: "A/B/C Top 3", value: "다음 단계에서 요약됩니다")
+                ReportPreviewRow(title: "주목할 만한 변화", value: weeklyTopBehavior)
+                ReportPreviewRow(title: "A/B/C Top 3", value: "리포트에서 자세히 확인해요")
+
+                NavigationLink {
+                    ReportView()
+                } label: {
+                    Text("리포트 보기")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(AICOTheme.primaryOrange)
+                }
             }
             .padding()
             .background(AICOTheme.cardBackground)
