@@ -1,12 +1,14 @@
 import Foundation
+import SwiftData
 
-struct RecordEntry: Identifiable, Hashable {
-    let id: UUID
+@Model
+final class RecordEntry {
+    @Attribute(.unique) var id: UUID
     var recipientId: UUID
     var createdAt: Date
-    var antecedentCategories: [RecordCategory]
-    var behaviorCategories: [RecordCategory]
-    var consequenceCategories: [RecordCategory]
+    var antecedentCategories: [String]
+    var behaviorCategories: [String]
+    var consequenceCategories: [String]
     var note: String?
     var attachmentNames: [String]
 
@@ -14,9 +16,9 @@ struct RecordEntry: Identifiable, Hashable {
         id: UUID = UUID(),
         recipientId: UUID,
         createdAt: Date = Date(),
-        antecedentCategories: [RecordCategory] = [],
-        behaviorCategories: [RecordCategory] = [],
-        consequenceCategories: [RecordCategory] = [],
+        antecedentCategories: [String] = [],
+        behaviorCategories: [String] = [],
+        consequenceCategories: [String] = [],
         note: String? = nil,
         attachmentNames: [String] = []
     ) {

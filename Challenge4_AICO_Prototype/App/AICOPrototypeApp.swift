@@ -1,10 +1,129 @@
+import SwiftData
 import SwiftUI
 
 @main
 struct AICOPrototypeApp: App {
+    @StateObject private var sessionState = AnonymousSessionState()
+
     var body: some Scene {
         WindowGroup {
+            RootView()
+                .environmentObject(sessionState)
+        }
+        .modelContainer(SwiftDataContainer.shared)
+    }
+}
+
+private struct RootView: View {
+    @EnvironmentObject private var sessionState: AnonymousSessionState
+
+    var body: some View {
+        if sessionState.hasSeenServiceIntro {
+            MainTabView()
+        } else {
+            ServiceIntroView {
+                sessionState.completeServiceIntro()
+            }
+        }
+    }
+}
+
+private struct MainTabView: View {
+    @State private var selectedTab: MainNavigationTab = .home
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                selectedView
+
+                Divider()
+
+                HStack(spacing: 16) {
+                    ForEach(MainNavigationTab.allCases) { tab in
+                        Button {
+                            selectedTab = tab
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: tab.systemImage)
+                                    .font(.title3)
+
+                                Text(tab.title)
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .foregroundStyle(selectedTab == tab ? AICOTheme.primaryOrange : .secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    NavigationLink {
+                        RecordingEntryView()
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "plus")
+                                .font(.headline)
+                                .fontWeight(.bold)
+
+                            Text("기록")
+                                .font(.caption2)
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 13)
+                        .background(AICOTheme.primaryOrange)
+                        .clipShape(Capsule())
+                    }
+                    .accessibilityLabel("기록 시작")
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 12)
+                .padding(.bottom, 12)
+                .background(.regularMaterial)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var selectedView: some View {
+        switch selectedTab {
+        case .home:
             HomeView()
+        case .archive:
+            ArchiveView()
+        case .report:
+            ReportView()
+        }
+    }
+}
+
+private enum MainNavigationTab: CaseIterable, Identifiable {
+    case home
+    case archive
+    case report
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .home:
+            "홈"
+        case .archive:
+            "아카이브"
+        case .report:
+            "리포트"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .home:
+            "house.fill"
+        case .archive:
+            "archivebox.fill"
+        case .report:
+            "chart.bar.xaxis"
         }
     }
 }

@@ -1,12 +1,15 @@
 import Foundation
+import SwiftData
 
-struct RecipientProfile: Identifiable, Hashable {
-    let id: UUID
+@Model
+final class RecipientProfile {
+    @Attribute(.unique) var id: UUID
     var nickname: String
     var age: Int?
     var gender: String?
     var autismTraits: String?
     var profileImageName: String?
+    var createdAt: Date
 
     init(
         id: UUID = UUID(),
@@ -14,7 +17,8 @@ struct RecipientProfile: Identifiable, Hashable {
         age: Int? = nil,
         gender: String? = nil,
         autismTraits: String? = nil,
-        profileImageName: String? = nil
+        profileImageName: String? = nil,
+        createdAt: Date = Date()
     ) {
         self.id = id
         self.nickname = nickname
@@ -22,5 +26,6 @@ struct RecipientProfile: Identifiable, Hashable {
         self.gender = gender
         self.autismTraits = autismTraits
         self.profileImageName = profileImageName
+        self.createdAt = createdAt
     }
 }
