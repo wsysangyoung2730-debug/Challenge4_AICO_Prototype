@@ -6,10 +6,17 @@ struct RecordingEntryView: View {
     @EnvironmentObject private var sessionState: AnonymousSessionState
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
     @Query(sort: \RecordCategory.createdAt) private var categories: [RecordCategory]
+    @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
+
+    let preferredRecipientID: UUID?
+
+    init(preferredRecipientID: UUID? = nil) {
+        self.preferredRecipientID = preferredRecipientID
+    }
 
     var body: some View {
         Group {
-            if let activeRecipient = recipients.first {
+            if let activeRecipient {
                 ZStack {
                     ABCRecordingFlowView(
                         recipients: recipients,
@@ -29,7 +36,17 @@ struct RecordingEntryView: View {
         .background(AICOTheme.softBackground)
         .onAppear {
             seedDefaultCategoriesIfNeeded()
+            updateWidgetSnapshot()
         }
+    }
+
+    private var activeRecipient: RecipientProfile? {
+        if let preferredRecipientID,
+           let preferredRecipient = recipients.first(where: { $0.id == preferredRecipientID }) {
+            return preferredRecipient
+        }
+
+        return recipients.first
     }
 
     private func seedDefaultCategoriesIfNeeded() {
@@ -50,6 +67,15 @@ struct RecordingEntryView: View {
         }
 
         try? modelContext.save()
+    }
+
+    private func updateWidgetSnapshot() {
+        let snapshot = WidgetSnapshotBuilder.build(
+            recipients: recipients,
+            records: records,
+            preferredRecipientId: preferredRecipientID
+        )
+        WidgetSnapshotStore.save(snapshot)
     }
 }
 

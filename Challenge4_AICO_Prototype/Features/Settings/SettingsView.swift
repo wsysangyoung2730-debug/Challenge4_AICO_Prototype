@@ -111,6 +111,7 @@ struct SettingsView: View {
 
         sessionState.hasSeenHomeTutorial = false
         sessionState.hasSeenRecordingTutorial = false
+        WidgetSnapshotStore.save(.fallback)
     }
 }
 
@@ -215,6 +216,8 @@ private enum RecipientEditMode {
 private struct RecipientEditView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
+    @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
 
     let mode: RecipientEditMode
 
@@ -319,25 +322,29 @@ private struct RecipientEditView: View {
         let normalizedGender = gender == "기타 / 선택 안 함" ? nil : gender
         let normalizedTraits = traits.trimmingCharacters(in: .whitespacesAndNewlines)
 
+        let savedRecipient: RecipientProfile
+
         if let recipient = mode.recipient {
             recipient.nickname = trimmedNickname
             recipient.age = Int(ageText.trimmingCharacters(in: .whitespacesAndNewlines))
             recipient.gender = normalizedGender
             recipient.autismTraits = normalizedTraits.isEmpty ? nil : normalizedTraits
             recipient.profileImageName = profileImageName
+            savedRecipient = recipient
         } else {
-            modelContext.insert(
-                RecipientProfile(
-                    nickname: trimmedNickname,
-                    age: Int(ageText.trimmingCharacters(in: .whitespacesAndNewlines)),
-                    gender: normalizedGender,
-                    autismTraits: normalizedTraits.isEmpty ? nil : normalizedTraits,
-                    profileImageName: profileImageName
-                )
+            let recipient = RecipientProfile(
+                nickname: trimmedNickname,
+                age: Int(ageText.trimmingCharacters(in: .whitespacesAndNewlines)),
+                gender: normalizedGender,
+                autismTraits: normalizedTraits.isEmpty ? nil : normalizedTraits,
+                profileImageName: profileImageName
             )
+            modelContext.insert(recipient)
+            savedRecipient = recipient
         }
 
         try? modelContext.save()
+        updateWidgetSnapshot(preferredRecipient: savedRecipient)
         dismiss()
     }
 
@@ -350,7 +357,21 @@ private struct RecipientEditView: View {
         ImageStorageService.deleteImage(named: recipient.profileImageName)
         modelContext.delete(recipient)
         try? modelContext.save()
+        updateWidgetSnapshot(excluding: recipient.id)
         dismiss()
+    }
+
+    private func updateWidgetSnapshot(preferredRecipient: RecipientProfile? = nil, excluding deletedRecipientId: UUID? = nil) {
+        var activeRecipients = recipients.filter { $0.id != deletedRecipientId }
+        if let preferredRecipient, !activeRecipients.contains(where: { $0.id == preferredRecipient.id }) {
+            activeRecipients.append(preferredRecipient)
+        }
+        let snapshot = WidgetSnapshotBuilder.build(
+            recipients: activeRecipients,
+            records: records,
+            preferredRecipientId: preferredRecipient?.id
+        )
+        WidgetSnapshotStore.save(snapshot)
     }
 
     @MainActor

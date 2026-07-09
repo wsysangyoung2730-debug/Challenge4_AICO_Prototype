@@ -6,6 +6,7 @@ struct ABCRecordingFlowView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \RecordCategory.createdAt) private var categories: [RecordCategory]
+    @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
 
     let recipients: [RecipientProfile]
 
@@ -516,7 +517,17 @@ struct ABCRecordingFlowView: View {
 
         modelContext.insert(record)
         try? modelContext.save()
+        updateWidgetSnapshot(with: record)
         savedRecord = record
+    }
+
+    private func updateWidgetSnapshot(with newRecord: RecordEntry) {
+        let snapshot = WidgetSnapshotBuilder.build(
+            recipients: recipients,
+            records: records + [newRecord],
+            preferredRecipientId: currentRecipient.id
+        )
+        WidgetSnapshotStore.save(snapshot)
     }
 
     private func resetFlow() {
