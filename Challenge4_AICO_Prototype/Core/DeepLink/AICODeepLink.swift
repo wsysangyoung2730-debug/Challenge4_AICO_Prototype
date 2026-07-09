@@ -1,6 +1,6 @@
 import Foundation
 
-enum AICODeepLink: Equatable, Identifiable {
+enum AICODeepLink: Equatable, Identifiable, Hashable {
     case quickRecord(recipientId: UUID?)
     case selectRecipientForRecord
 
