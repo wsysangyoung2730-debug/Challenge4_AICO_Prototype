@@ -20,16 +20,23 @@
 
 - Recipient registration
 - ABC recording flow
-- Custom category creation and editing
+- First-time recording tutorial
+- Custom category creation and local persistence
+- SwiftData record saving
 
 ## Phase 4
 
 - Archive record cards
 - Date and category filters
 - Record detail screen
+- Home recent record detail navigation
 
 ## Phase 5
 
 - Report screen summaries
 - Settings management
+- Daily, weekly, and monthly report views
+- Recipient and custom category management
+- Local notification preference
+- Local prototype data reset with confirmation
 - Prototype polish

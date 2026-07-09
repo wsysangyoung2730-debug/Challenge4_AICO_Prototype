@@ -30,6 +30,9 @@ private struct RootView: View {
 
 private struct MainTabView: View {
     @State private var selectedTab: MainNavigationTab = .home
+    @State private var activeDeepLink: AICODeepLink?
+    @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
+    @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
 
     var body: some View {
         NavigationStack {
@@ -82,6 +85,20 @@ private struct MainTabView: View {
                 .padding(.bottom, 12)
                 .background(.regularMaterial)
             }
+            .navigationDestination(item: $activeDeepLink) { deepLink in
+                switch deepLink {
+                case let .quickRecord(recipientId):
+                    RecordingEntryView(preferredRecipientID: recipientId)
+                case .selectRecipientForRecord:
+                    QuickRecordRecipientPickerView()
+                }
+            }
+        }
+        .onAppear {
+            updateWidgetSnapshot()
+        }
+        .onOpenURL { url in
+            activeDeepLink = AICODeepLinkRouter.parse(url)
         }
     }
 
@@ -95,6 +112,11 @@ private struct MainTabView: View {
         case .report:
             ReportView()
         }
+    }
+
+    private func updateWidgetSnapshot() {
+        let snapshot = WidgetSnapshotBuilder.build(recipients: recipients, records: records)
+        WidgetSnapshotStore.save(snapshot)
     }
 }
 

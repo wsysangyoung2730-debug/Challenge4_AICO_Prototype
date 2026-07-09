@@ -4,8 +4,8 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var sessionState: AnonymousSessionState
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
+    @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
 
-    @State private var selectedRecord: RecordEntry?
     @State private var selectedInfoItem: HomeInfoFeedItem?
 
     private var recentRecords: [RecordEntry] {
@@ -15,6 +15,26 @@ struct HomeView: View {
     private var weeklyRecordCount: Int {
         let calendar = Calendar.current
         return records.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .weekOfYear) }.count
+    }
+
+    private var weeklyRecords: [RecordEntry] {
+        let calendar = Calendar.current
+        return records.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .weekOfYear) }
+    }
+
+    private var weeklyTopBehavior: String {
+        let names = weeklyRecords.flatMap(\.behaviorCategories)
+        let top = Dictionary(grouping: names, by: { $0 })
+            .map { (name: $0.key, count: $0.value.count) }
+            .sorted {
+                if $0.count == $1.count {
+                    return $0.name < $1.name
+                }
+                return $0.count > $1.count
+            }
+            .first
+
+        return top.map { "\($0.name)이 자주 기록되었어요" } ?? "기록이 쌓이면 표시됩니다"
     }
 
     private let feedItems = [
@@ -73,9 +93,6 @@ struct HomeView: View {
                     sessionState.completeHomeTutorial()
                 }
             }
-        }
-        .sheet(item: $selectedRecord) { record in
-            RecentRecordSummaryView(record: record)
         }
         .sheet(item: $selectedInfoItem) { item in
             HomeInfoFeedDetailView(item: item)
@@ -138,14 +155,23 @@ struct HomeView: View {
                     systemImage: "clock.fill"
                 )
             } else {
-                VStack(spacing: 10) {
-                    ForEach(recentRecords) { record in
-                        Button {
-                            selectedRecord = record
-                        } label: {
-                            RecentRecordPreviewCard(record: record)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(recentRecords) { record in
+                            NavigationLink {
+                                RecordDetailView(
+                                    record: record,
+                                    recipientName: recipientName(for: record)
+                                )
+                            } label: {
+                                RecentRecordPreviewCard(
+                                    record: record,
+                                    recipientName: recipientName(for: record)
+                                )
+                                .frame(width: 270)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -174,8 +200,17 @@ struct HomeView: View {
 
                 Divider()
 
-                ReportPreviewRow(title: "주목할 만한 변화", value: "기록이 쌓이면 표시됩니다")
-                ReportPreviewRow(title: "A/B/C Top 3", value: "다음 단계에서 요약됩니다")
+                ReportPreviewRow(title: "주목할 만한 변화", value: weeklyTopBehavior)
+                ReportPreviewRow(title: "A/B/C Top 3", value: "리포트에서 자세히 확인해요")
+
+                NavigationLink {
+                    ReportView()
+                } label: {
+                    Text("리포트 보기")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(AICOTheme.primaryOrange)
+                }
             }
             .padding()
             .background(AICOTheme.cardBackground)
@@ -226,6 +261,10 @@ struct HomeView: View {
         }
     }
 
+    private func recipientName(for record: RecordEntry) -> String {
+        recipients.first { $0.id == record.recipientId }?.nickname ?? "등록된 대상자"
+    }
+
 }
 
 private struct DashboardSection<Content: View>: View {
@@ -269,16 +308,37 @@ private struct DashboardSection<Content: View>: View {
 
 private struct RecentRecordPreviewCard: View {
     let record: RecordEntry
+    let recipientName: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(record.createdAt.formatted(date: .abbreviated, time: .shortened))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(recipientName)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+
+                    Text(record.createdAt.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(mainBehavior)
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundStyle(AICOTheme.primaryOrange)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(AICOTheme.primaryOrange.opacity(0.12))
+                    .clipShape(Capsule())
+            }
 
             Text(categorySummary)
-                .font(.headline)
+                .font(.subheadline)
                 .foregroundStyle(.primary)
+                .lineLimit(2)
 
             if let note = record.note, !note.isEmpty {
                 Text(note)
@@ -290,7 +350,15 @@ private struct RecentRecordPreviewCard: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AICOTheme.cardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
+                .stroke(AICOTheme.primaryOrange.opacity(0.22), lineWidth: 1)
+        }
         .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+    }
+
+    private var mainBehavior: String {
+        record.behaviorCategories.first ?? "B단계 없음"
     }
 
     private var categorySummary: String {
@@ -307,34 +375,6 @@ private struct RecentRecordPreviewCard: View {
         .joined(separator: " / ")
 
         return summary.isEmpty ? "A/B/C 카테고리 없음" : summary
-    }
-}
-
-private struct RecentRecordSummaryView: View {
-    let record: RecordEntry
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: AICOTheme.sectionSpacing) {
-                Text(record.createdAt.formatted(date: .complete, time: .shortened))
-                    .font(.headline)
-
-                Text("A: \(record.antecedentCategories.joined(separator: ", ").ifEmpty("없음"))")
-                Text("B: \(record.behaviorCategories.joined(separator: ", ").ifEmpty("없음"))")
-                Text("C: \(record.consequenceCategories.joined(separator: ", ").ifEmpty("없음"))")
-
-                if let note = record.note, !note.isEmpty {
-                    Text(note)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-            }
-            .padding(AICOTheme.screenPadding)
-            .navigationTitle("기록 요약")
-            .navigationBarTitleDisplayMode(.inline)
-            .background(AICOTheme.softBackground)
-        }
     }
 }
 
@@ -355,12 +395,6 @@ private struct ReportPreviewRow: View {
                 .fontWeight(.semibold)
                 .multilineTextAlignment(.trailing)
         }
-    }
-}
-
-private extension String {
-    func ifEmpty(_ fallback: String) -> String {
-        isEmpty ? fallback : self
     }
 }
 
