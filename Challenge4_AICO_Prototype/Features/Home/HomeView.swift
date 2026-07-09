@@ -4,8 +4,8 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var sessionState: AnonymousSessionState
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
+    @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
 
-    @State private var selectedRecord: RecordEntry?
     @State private var selectedInfoItem: HomeInfoFeedItem?
 
     private var recentRecords: [RecordEntry] {
@@ -74,9 +74,6 @@ struct HomeView: View {
                 }
             }
         }
-        .sheet(item: $selectedRecord) { record in
-            RecentRecordSummaryView(record: record)
-        }
         .sheet(item: $selectedInfoItem) { item in
             HomeInfoFeedDetailView(item: item)
         }
@@ -140,10 +137,16 @@ struct HomeView: View {
             } else {
                 VStack(spacing: 10) {
                     ForEach(recentRecords) { record in
-                        Button {
-                            selectedRecord = record
+                        NavigationLink {
+                            RecordDetailView(
+                                record: record,
+                                recipientName: recipientName(for: record)
+                            )
                         } label: {
-                            RecentRecordPreviewCard(record: record)
+                            RecentRecordPreviewCard(
+                                record: record,
+                                recipientName: recipientName(for: record)
+                            )
                         }
                         .buttonStyle(.plain)
                     }
@@ -226,6 +229,10 @@ struct HomeView: View {
         }
     }
 
+    private func recipientName(for record: RecordEntry) -> String {
+        recipients.first { $0.id == record.recipientId }?.nickname ?? "등록된 대상자"
+    }
+
 }
 
 private struct DashboardSection<Content: View>: View {
@@ -269,16 +276,37 @@ private struct DashboardSection<Content: View>: View {
 
 private struct RecentRecordPreviewCard: View {
     let record: RecordEntry
+    let recipientName: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(record.createdAt.formatted(date: .abbreviated, time: .shortened))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(recipientName)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+
+                    Text(record.createdAt.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(mainBehavior)
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundStyle(AICOTheme.primaryOrange)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(AICOTheme.primaryOrange.opacity(0.12))
+                    .clipShape(Capsule())
+            }
 
             Text(categorySummary)
-                .font(.headline)
+                .font(.subheadline)
                 .foregroundStyle(.primary)
+                .lineLimit(2)
 
             if let note = record.note, !note.isEmpty {
                 Text(note)
@@ -291,6 +319,10 @@ private struct RecentRecordPreviewCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AICOTheme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+    }
+
+    private var mainBehavior: String {
+        record.behaviorCategories.first ?? "B단계 없음"
     }
 
     private var categorySummary: String {
@@ -307,34 +339,6 @@ private struct RecentRecordPreviewCard: View {
         .joined(separator: " / ")
 
         return summary.isEmpty ? "A/B/C 카테고리 없음" : summary
-    }
-}
-
-private struct RecentRecordSummaryView: View {
-    let record: RecordEntry
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: AICOTheme.sectionSpacing) {
-                Text(record.createdAt.formatted(date: .complete, time: .shortened))
-                    .font(.headline)
-
-                Text("A: \(record.antecedentCategories.joined(separator: ", ").ifEmpty("없음"))")
-                Text("B: \(record.behaviorCategories.joined(separator: ", ").ifEmpty("없음"))")
-                Text("C: \(record.consequenceCategories.joined(separator: ", ").ifEmpty("없음"))")
-
-                if let note = record.note, !note.isEmpty {
-                    Text(note)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-            }
-            .padding(AICOTheme.screenPadding)
-            .navigationTitle("기록 요약")
-            .navigationBarTitleDisplayMode(.inline)
-            .background(AICOTheme.softBackground)
-        }
     }
 }
 
@@ -355,12 +359,6 @@ private struct ReportPreviewRow: View {
                 .fontWeight(.semibold)
                 .multilineTextAlignment(.trailing)
         }
-    }
-}
-
-private extension String {
-    func ifEmpty(_ fallback: String) -> String {
-        isEmpty ? fallback : self
     }
 }
 

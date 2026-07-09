@@ -29,6 +29,7 @@
 - Archive record cards
 - Date and category filters
 - Record detail screen
+- Home recent record detail navigation
 
 ## Phase 5
 
