@@ -35,6 +35,13 @@
 		10000000000000000000001A /* ArchiveRecordCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011A /* ArchiveRecordCardView.swift */; };
 		10000000000000000000001B /* RecordDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011B /* RecordDetailView.swift */; };
 		10000000000000000000001C /* ImageStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011C /* ImageStorageService.swift */; };
+		10000000000000000000001D /* AICOWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011D /* AICOWidgetSnapshot.swift */; };
+		10000000000000000000001E /* AICOWidgetRecordSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011E /* AICOWidgetRecordSummary.swift */; };
+		10000000000000000000001F /* WidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011F /* WidgetSnapshotStore.swift */; };
+		100000000000000000000024 /* WidgetSnapshotBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000120 /* WidgetSnapshotBuilder.swift */; };
+		100000000000000000000025 /* AICODeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000121 /* AICODeepLink.swift */; };
+		100000000000000000000026 /* AICODeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000122 /* AICODeepLinkRouter.swift */; };
+		100000000000000000000027 /* QuickRecordRecipientPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000123 /* QuickRecordRecipientPickerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +74,13 @@
 		10000000000000000000011A /* ArchiveRecordCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveRecordCardView.swift; sourceTree = "<group>"; };
 		10000000000000000000011B /* RecordDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordDetailView.swift; sourceTree = "<group>"; };
 		10000000000000000000011C /* ImageStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStorageService.swift; sourceTree = "<group>"; };
+		10000000000000000000011D /* AICOWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICOWidgetSnapshot.swift; sourceTree = "<group>"; };
+		10000000000000000000011E /* AICOWidgetRecordSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICOWidgetRecordSummary.swift; sourceTree = "<group>"; };
+		10000000000000000000011F /* WidgetSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotStore.swift; sourceTree = "<group>"; };
+		100000000000000000000120 /* WidgetSnapshotBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotBuilder.swift; sourceTree = "<group>"; };
+		100000000000000000000121 /* AICODeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICODeepLink.swift; sourceTree = "<group>"; };
+		100000000000000000000122 /* AICODeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICODeepLinkRouter.swift; sourceTree = "<group>"; };
+		100000000000000000000123 /* QuickRecordRecipientPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickRecordRecipientPickerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,6 +138,8 @@
 				100000000000000000000213 /* Persistence */,
 				100000000000000000000214 /* State */,
 				100000000000000000000215 /* Utilities */,
+				100000000000000000000216 /* Widget */,
+				100000000000000000000217 /* DeepLink */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -201,6 +217,26 @@
 			path = Utilities;
 			sourceTree = "<group>";
 		};
+		100000000000000000000216 /* Widget */ = {
+			isa = PBXGroup;
+			children = (
+				10000000000000000000011D /* AICOWidgetSnapshot.swift */,
+				10000000000000000000011E /* AICOWidgetRecordSummary.swift */,
+				10000000000000000000011F /* WidgetSnapshotStore.swift */,
+				100000000000000000000120 /* WidgetSnapshotBuilder.swift */,
+			);
+			path = Widget;
+			sourceTree = "<group>";
+		};
+		100000000000000000000217 /* DeepLink */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000121 /* AICODeepLink.swift */,
+				100000000000000000000122 /* AICODeepLinkRouter.swift */,
+			);
+			path = DeepLink;
+			sourceTree = "<group>";
+		};
 		100000000000000000000221 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
@@ -228,6 +264,7 @@
 				100000000000000000000116 /* ABCRecordingFlowView.swift */,
 				100000000000000000000117 /* CategorySelectionStepView.swift */,
 				100000000000000000000118 /* RecordingCompletionView.swift */,
+				100000000000000000000123 /* QuickRecordRecipientPickerView.swift */,
 			);
 			path = Recording;
 			sourceTree = "<group>";
@@ -367,6 +404,13 @@
 				10000000000000000000001A /* ArchiveRecordCardView.swift in Sources */,
 				10000000000000000000001B /* RecordDetailView.swift in Sources */,
 				10000000000000000000001C /* ImageStorageService.swift in Sources */,
+				10000000000000000000001D /* AICOWidgetSnapshot.swift in Sources */,
+				10000000000000000000001E /* AICOWidgetRecordSummary.swift in Sources */,
+				10000000000000000000001F /* WidgetSnapshotStore.swift in Sources */,
+				100000000000000000000024 /* WidgetSnapshotBuilder.swift in Sources */,
+				100000000000000000000025 /* AICODeepLink.swift in Sources */,
+				100000000000000000000026 /* AICODeepLinkRouter.swift in Sources */,
+				100000000000000000000027 /* QuickRecordRecipientPickerView.swift in Sources */,
 				10000000000000000000000F /* ReportView.swift in Sources */,
 				100000000000000000000010 /* SettingsView.swift in Sources */,
 				100000000000000000000011 /* PlaceholderCardView.swift in Sources */,
