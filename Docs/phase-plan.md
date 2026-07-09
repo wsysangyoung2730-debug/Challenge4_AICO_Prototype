@@ -20,7 +20,9 @@
 
 - Recipient registration
 - ABC recording flow
-- Custom category creation and editing
+- First-time recording tutorial
+- Custom category creation and local persistence
+- SwiftData record saving
 
 ## Phase 4
 

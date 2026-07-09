@@ -44,4 +44,8 @@ final class AnonymousSessionState: ObservableObject {
     func completeHomeTutorial() {
         hasSeenHomeTutorial = true
     }
+
+    func completeRecordingTutorial() {
+        hasSeenRecordingTutorial = true
+    }
 }
