@@ -30,54 +30,58 @@ private struct RootView: View {
 
 private struct MainTabView: View {
     @State private var selectedTab: MainNavigationTab = .home
-    @State private var showsRecordingFlow = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            selectedView
+        NavigationStack {
+            VStack(spacing: 0) {
+                selectedView
 
-            Divider()
+                Divider()
 
-            HStack(spacing: 16) {
-                ForEach(MainNavigationTab.allCases) { tab in
-                    Button {
-                        selectedTab = tab
+                HStack(spacing: 16) {
+                    ForEach(MainNavigationTab.allCases) { tab in
+                        Button {
+                            selectedTab = tab
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: tab.systemImage)
+                                    .font(.title3)
+
+                                Text(tab.title)
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .foregroundStyle(selectedTab == tab ? AICOTheme.primaryOrange : .secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    NavigationLink {
+                        RecordingEntryView()
                     } label: {
-                        VStack(spacing: 4) {
-                            Image(systemName: tab.systemImage)
-                                .font(.title3)
+                        HStack(spacing: 5) {
+                            Image(systemName: "plus")
+                                .font(.headline)
+                                .fontWeight(.bold)
 
-                            Text(tab.title)
-                                .font(.caption)
+                            Text("기록")
+                                .font(.caption2)
                                 .fontWeight(.semibold)
                         }
-                        .frame(maxWidth: .infinity)
-                        .foregroundStyle(selectedTab == tab ? AICOTheme.primaryOrange : .secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                Button {
-                    showsRecordingFlow = true
-                } label: {
-                    Label("기록", systemImage: "plus")
-                        .font(.headline)
-                        .fontWeight(.bold)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 18)
                         .padding(.vertical, 13)
                         .background(AICOTheme.primaryOrange)
                         .clipShape(Capsule())
+                    }
+                    .accessibilityLabel("기록 시작")
                 }
-                .accessibilityLabel("기록 시작")
+                .padding(.horizontal, 18)
+                .padding(.top, 12)
+                .padding(.bottom, 12)
+                .background(.regularMaterial)
             }
-            .padding(.horizontal, 18)
-            .padding(.top, 12)
-            .padding(.bottom, 12)
-            .background(.regularMaterial)
-        }
-        .sheet(isPresented: $showsRecordingFlow) {
-            RecordingEntryView()
         }
     }
 

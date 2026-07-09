@@ -9,31 +9,29 @@ struct SettingsView: View {
     ]
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    ForEach(rows, id: \.0) { row in
-                        HStack(spacing: 12) {
-                            Image(systemName: row.1)
-                                .foregroundStyle(AICOTheme.primaryOrange)
-                                .frame(width: 24)
+        List {
+            Section {
+                ForEach(rows, id: \.0) { row in
+                    HStack(spacing: 12) {
+                        Image(systemName: row.1)
+                            .foregroundStyle(AICOTheme.primaryOrange)
+                            .frame(width: 24)
 
-                            Text(row.0)
+                        Text(row.0)
 
-                            Spacer()
+                        Spacer()
 
-                            Image(systemName: "chevron.right")
-                                .font(.footnote)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .contentShape(Rectangle())
+                        Image(systemName: "chevron.right")
+                            .font(.footnote)
+                            .foregroundStyle(.tertiary)
                     }
+                    .contentShape(Rectangle())
                 }
             }
-            .navigationTitle("설정")
-            .scrollContentBackground(.hidden)
-            .background(AICOTheme.softBackground)
         }
+        .navigationTitle("설정")
+        .scrollContentBackground(.hidden)
+        .background(AICOTheme.softBackground)
     }
 }
 

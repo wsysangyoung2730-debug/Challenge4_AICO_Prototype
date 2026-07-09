@@ -7,7 +7,6 @@ struct HomeView: View {
 
     @State private var selectedRecord: RecordEntry?
     @State private var selectedInfoItem: HomeInfoFeedItem?
-    @State private var showsSettings = false
 
     private var recentRecords: [RecordEntry] {
         Array(records.prefix(5))
@@ -40,51 +39,46 @@ struct HomeView: View {
     ]
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        headerSection
-                        recentRecordsSection
-                        reportPreviewSection
-                        informationFeedSection
-                    }
+        ZStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    headerSection
+                    recentRecordsSection
+                    reportPreviewSection
+                    informationFeedSection
                 }
-                .background(AICOTheme.softBackground)
-                .navigationTitle("")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItemGroup(placement: .topBarTrailing) {
-                        Button {
-                        } label: {
-                            Image(systemName: "bell")
-                        }
-                        .accessibilityLabel("알림")
+            }
+            .background(AICOTheme.softBackground)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                    } label: {
+                        Image(systemName: "bell")
+                    }
+                    .accessibilityLabel("알림")
 
-                        Button {
-                            showsSettings = true
-                        } label: {
-                            Image(systemName: "gearshape")
-                        }
-                        .accessibilityLabel("설정")
+                    NavigationLink {
+                        SettingsView()
+                    } label: {
+                        Image(systemName: "gearshape")
                     }
+                    .accessibilityLabel("설정")
                 }
+            }
 
-                if !sessionState.hasSeenHomeTutorial {
-                    HomeTutorialOverlayView {
-                        sessionState.completeHomeTutorial()
-                    }
+            if !sessionState.hasSeenHomeTutorial {
+                HomeTutorialOverlayView {
+                    sessionState.completeHomeTutorial()
                 }
             }
-            .sheet(item: $selectedRecord) { record in
-                RecentRecordSummaryView(record: record)
-            }
-            .sheet(item: $selectedInfoItem) { item in
-                HomeInfoFeedDetailView(item: item)
-            }
-            .sheet(isPresented: $showsSettings) {
-                SettingsView()
-            }
+        }
+        .sheet(item: $selectedRecord) { record in
+            RecentRecordSummaryView(record: record)
+        }
+        .sheet(item: $selectedInfoItem) { item in
+            HomeInfoFeedDetailView(item: item)
         }
     }
 
