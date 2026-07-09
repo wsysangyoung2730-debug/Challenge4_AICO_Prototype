@@ -296,6 +296,9 @@ private struct RecipientEditView: View {
         .onChange(of: selectedPhotoItem) {
             Task { await saveSelectedProfileImage() }
         }
+        .onChange(of: ageText) {
+            ageText = sanitizedAgeText(ageText)
+        }
         .alert("대상자를 삭제할까요?", isPresented: $showsDeleteConfirmation) {
             Button("취소", role: .cancel) {}
             Button("삭제하기", role: .destructive) {
@@ -336,6 +339,10 @@ private struct RecipientEditView: View {
 
         try? modelContext.save()
         dismiss()
+    }
+
+    private func sanitizedAgeText(_ value: String) -> String {
+        String(value.filter(\.isNumber).prefix(2))
     }
 
     private func deleteRecipient() {

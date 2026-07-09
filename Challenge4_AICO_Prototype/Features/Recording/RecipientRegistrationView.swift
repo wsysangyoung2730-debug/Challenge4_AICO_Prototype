@@ -31,6 +31,9 @@ struct RecipientRegistrationView: View {
         .onChange(of: selectedPhotoItem) {
             Task { await saveSelectedProfileImage() }
         }
+        .onChange(of: ageText) {
+            ageText = sanitizedAgeText(ageText)
+        }
     }
 
     private var header: some View {
@@ -179,6 +182,10 @@ struct RecipientRegistrationView: View {
         modelContext.insert(recipient)
         try? modelContext.save()
         validationMessage = nil
+    }
+
+    private func sanitizedAgeText(_ value: String) -> String {
+        String(value.filter(\.isNumber).prefix(2))
     }
 
     @MainActor

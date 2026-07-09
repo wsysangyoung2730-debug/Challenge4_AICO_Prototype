@@ -22,6 +22,8 @@ struct ABCRecordingFlowView: View {
     @State private var savedRecord: RecordEntry?
     @State private var validationMessage: String?
     @State private var recipientSwitchMessage: String?
+    @State private var showsRecipientSelector = false
+    @State private var showsExitAlert = false
 
     private let steps = RecordingStep.allCases
 
@@ -34,30 +36,57 @@ struct ABCRecordingFlowView: View {
         Group {
             if savedRecord != nil {
                 RecordingCompletionView(
-                    onReturnHome: { dismiss() },
-                    onCreateAnother: { resetFlow() }
+                    onReturnHome: { dismiss() }
                 )
             } else {
-                VStack(spacing: 0) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        profileSwitcher
-                        progressBar
-                    }
-                    .padding(AICOTheme.screenPadding)
+                ZStack {
+                    VStack(spacing: 0) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            profileSwitcher
+                            progressBar
+                        }
+                        .padding(AICOTheme.screenPadding)
 
-                    ScrollView {
-                        currentStepContent
-                            .padding(.horizontal, AICOTheme.screenPadding)
-                            .padding(.bottom, 16)
+                        ScrollView {
+                            currentStepContent
+                                .padding(.horizontal, AICOTheme.screenPadding)
+                                .padding(.bottom, 16)
+                        }
+
+                        bottomActionArea
                     }
 
-                    bottomActionArea
+                    if showsRecipientSelector {
+                        recipientSelectorOverlay
+                    }
                 }
             }
         }
         .background(AICOTheme.softBackground)
+        .navigationTitle("기록하기")
+        .navigationBarTitleDisplayMode(.automatic)
+        .navigationBarBackButtonHidden(savedRecord == nil)
+        .toolbar {
+            if savedRecord == nil {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showsExitAlert = true
+                    } label: {
+                        Label("뒤로", systemImage: "chevron.left")
+                    }
+                }
+            }
+        }
         .onChange(of: selectedAttachmentItem) {
             Task { await saveSelectedAttachment() }
+        }
+        .alert("기록을 중단할까요?", isPresented: $showsExitAlert) {
+            Button("계속 작성하기", role: .cancel) {}
+            Button("나가기", role: .destructive) {
+                discardDraftAndDismiss()
+            }
+        } message: {
+            Text("지금 나가면 작성 중인 기록이 모두 삭제됩니다.")
         }
         .alert("대상자 전환", isPresented: recipientSwitchMessageBinding) {
             Button("확인", role: .cancel) {}
@@ -86,7 +115,7 @@ struct ABCRecordingFlowView: View {
 
     private var profileSwitcher: some View {
         Button {
-            switchToNextRecipient(showSingleMessage: true)
+            showsRecipientSelector = true
         } label: {
             HStack(spacing: 12) {
                 recipientAvatar
@@ -115,11 +144,68 @@ struct ABCRecordingFlowView: View {
             .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
         }
         .buttonStyle(.plain)
-        .simultaneousGesture(
-            TapGesture(count: 2).onEnded {
-                switchToNextRecipient(showSingleMessage: false)
+    }
+
+    private var recipientSelectorOverlay: some View {
+        ZStack(alignment: .top) {
+            Color.black.opacity(0.42)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    showsRecipientSelector = false
+                }
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("기록 대상을 선택해요")
+                    .font(.headline)
+
+                ForEach(recipients) { recipient in
+                    Button {
+                        currentRecipientID = recipient.id
+                        showsRecipientSelector = false
+                    } label: {
+                        HStack(spacing: 12) {
+                            recipientAvatar(for: recipient)
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(recipient.nickname)
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+
+                                if recipient.id == currentRecipientID {
+                                    Text("현재 선택됨")
+                                        .font(.caption)
+                                        .foregroundStyle(AICOTheme.primaryOrange)
+                                } else {
+                                    Text("이 대상자로 기록하기")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+
+                            Spacer()
+
+                            if recipient.id == currentRecipientID {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(AICOTheme.primaryOrange)
+                            }
+                        }
+                        .padding(10)
+                        .background(recipient.id == currentRecipientID ? AICOTheme.softOrangeBackground : AICOTheme.cardBackground)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
+                                .stroke(recipient.id == currentRecipientID ? AICOTheme.primaryOrange.opacity(0.45) : Color.clear, lineWidth: 1)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+                    }
+                    .buttonStyle(.plain)
+                }
             }
-        )
+            .padding()
+            .background(AICOTheme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .padding(.horizontal, AICOTheme.screenPadding)
+            .padding(.top, 18)
+        }
     }
 
     private var recipientAvatar: some View {
@@ -140,6 +226,24 @@ struct ABCRecordingFlowView: View {
         .clipShape(Circle())
     }
 
+    private func recipientAvatar(for recipient: RecipientProfile) -> some View {
+        Group {
+            if let image = ImageStorageService.image(for: recipient.profileImageName) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.title)
+                    .foregroundStyle(AICOTheme.primaryOrange)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(AICOTheme.softOrangeBackground)
+            }
+        }
+        .frame(width: 44, height: 44)
+        .clipShape(Circle())
+    }
+
     private var progressBar: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -156,9 +260,6 @@ struct ABCRecordingFlowView: View {
                 .foregroundStyle(AICOTheme.primaryOrange)
         }
         .contentShape(Rectangle())
-        .onTapGesture(count: 2) {
-            switchToNextRecipient(showSingleMessage: false)
-        }
     }
 
     @ViewBuilder
@@ -430,17 +531,10 @@ struct ABCRecordingFlowView: View {
         savedRecord = nil
     }
 
-    private func switchToNextRecipient(showSingleMessage: Bool) {
-        guard recipients.count > 1 else {
-            if showSingleMessage {
-                recipientSwitchMessage = "등록된 대상자가 1명이라 전환할 대상자가 없어요."
-            }
-            return
-        }
-
-        let currentIndex = recipients.firstIndex { $0.id == currentRecipientID } ?? recipients.startIndex
-        let nextIndex = recipients.index(after: currentIndex)
-        currentRecipientID = recipients[nextIndex == recipients.endIndex ? recipients.startIndex : nextIndex].id
+    private func discardDraftAndDismiss() {
+        attachmentNames.forEach { ImageStorageService.deleteImage(named: $0) }
+        resetFlow()
+        dismiss()
     }
 
     @MainActor

@@ -26,7 +26,6 @@ struct RecordingEntryView: View {
                 RecipientRegistrationView()
             }
         }
-        .navigationTitle("기록하기")
         .background(AICOTheme.softBackground)
         .onAppear {
             seedDefaultCategoriesIfNeeded()
