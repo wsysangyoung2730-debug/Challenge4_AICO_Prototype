@@ -10,6 +10,6 @@ struct QuickRecordWidget: Widget {
         }
         .configurationDisplayName("AICO Quick Record")
         .description("오늘 기록 수와 빠른 기록 진입점을 보여줍니다.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
