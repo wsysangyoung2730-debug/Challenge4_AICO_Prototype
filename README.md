@@ -1,8 +1,15 @@
 # Challenge4_AICO_Prototype
 
+![Swift](https://img.shields.io/badge/Swift-5.0-F05138?logo=swift&logoColor=white)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-iOS%20UI-0A84FF?logo=swift&logoColor=white)
+![SwiftData](https://img.shields.io/badge/SwiftData-Local%20Persistence-FF8A00)
+![WidgetKit](https://img.shields.io/badge/WidgetKit-Quick%20Record-34C759)
+![Share Extension](https://img.shields.io/badge/Share%20Extension-Photo%20Entry-5856D6)
+![iOS](https://img.shields.io/badge/iOS-17%2B-black?logo=apple&logoColor=white)
+
 AICO의 핵심 사용자 흐름을 검증하기 위한 iOS 프로토타입 앱입니다.
 
-A prototype iOS app for testing AICO's core flow: anonymous onboarding, recipient registration, ABC-based recording, archive filtering, and report summaries.
+A prototype iOS app for testing AICO's core flow: anonymous onboarding, recipient registration, ABC-based recording, archive filtering, report summaries, quick record widget entry, and photo-based share extension entry.
 
 ## Project Background
 
@@ -12,110 +19,163 @@ AICO는 자폐스펙트럼 대상자의 보호자가 대상자의 상황, 행동
 
 앱의 아이콘과 UI 톤은 따뜻한 오렌지 캐릭터 스타일의 AICO를 기준으로 하며, 차가운 의료 앱보다 부드럽고 지지적인 보호자 친화 경험을 목표로 합니다.
 
-## Core Flow
+### Core Flow
 
-1. App launch
-2. Anonymous entry instead of immediate signup
-3. New user service introduction
-4. Home screen
-   - recent records preview
-   - brief report preview
-   - information feed
-   - notification entry
-   - profile/settings entry
-5. First-time tutorial per new tab/menu
-6. Recording tutorial explaining A/B/C recording
-7. Recipient registration required before real recording
-8. Recipient profile fields
-   - name/nickname: required
-   - age: optional
-   - gender: optional
-   - autism degree or traits: optional
-   - profile image: optional
-9. ABC recording flow
-   - A: antecedent/context before behavior
-   - B: behavior/signal
-   - C: consequence/response/result
-   - optional photo and free text
-   - custom category addition through plus button
-   - custom categories persist and are editable in settings
-10. Archive
-   - saved records as cards
-   - date filter: 1 week, 1 month, 3 months
-   - category filter
-11. Report
-   - total weekly record count
-   - notable changes
-   - A/B/C Top 3
-12. Data sharing will be designed later and should not be implemented now.
+| 단계 | 흐름 | 현재 프로토타입 반영 |
+| --- | --- | --- |
+| 1 | 앱 실행 | SwiftUI App entry와 로컬 상태 기반 진입 |
+| 2 | 익명 진입 | 실제 로그인 없이 AppStorage 기반 익명 사용자 상태 사용 |
+| 3 | 서비스 소개 | 최초 사용자에게 AICO 사용 목적 안내 |
+| 4 | 홈 대시보드 | 최근 기록, 간단 리포트, 정보 피드, 알림/설정 진입 |
+| 5 | 홈 튜토리얼 | 최초 1회 홈 화면 오버레이 튜토리얼 |
+| 6 | 대상자 등록 | 실제 기록 전 대상자 이름/나이/성별/특성/프로필 이미지 등록 |
+| 7 | 기록 튜토리얼 | A/B/C 기록 방식 최초 1회 안내 |
+| 8 | A/B/C 기록 | 상황, 행동, 대응을 단계별로 선택하고 메모/사진 첨부 |
+| 9 | 아카이브 | 저장된 기록 카드 목록, 날짜/단계 필터, 상세 화면 |
+| 10 | 리포트 | 일일/주간/월간 요약, A/B/C Top 3, 간단 차트 |
+| 11 | 설정 관리 | 대상자, 카테고리, 알림 설정, 로컬 데이터 삭제 |
+| 12 | 외부 진입 | 위젯 빠른 기록, 사진 앱 공유 확장을 통한 기록 시작 실험 |
 
-## Core Features
+### Core Features
 
-- Anonymous onboarding
-- Service introduction for new users
-- Home dashboard
-- Recipient registration
-- ABC-based recording
-- Custom category management
-- Archive filtering
-- Weekly report summary
-- Settings and notification entry
+| 기능 | 설명 | 구현 위치 |
+| --- | --- | --- |
+| 익명 온보딩 | 민감정보 입력 전 앱을 먼저 둘러보는 진입 흐름 | `Features/Onboarding` |
+| 홈 대시보드 | 최근 기록, 리포트 미리보기, 정보 피드 제공 | `Features/Home` |
+| 대상자 등록/관리 | 기록 대상자의 기본 프로필 생성, 수정, 삭제 | `Features/Recording`, `Features/Settings` |
+| A/B/C 기록 | Antecedent, Behavior, Consequence 기반 기록 작성 | `Features/Recording` |
+| 커스텀 카테고리 | A/B/C 단계별 사용자 카테고리 추가 및 관리 | `Features/Recording`, `Features/Settings` |
+| 아카이브 | SwiftData 기록 목록, 필터, 상세, 단일 기록 삭제 | `Features/Archive` |
+| 리포트 | 기간별 기록 수, Top 3, 반복 패턴 요약 | `Features/Report` |
+| 위젯 | 오늘 기록 수와 빠른 기록 진입점 제공 | `AICOWidgetExtension` |
+| 사진 공유 확장 | 사진 앱 공유 버튼에서 AICO 기록 흐름 진입 실험 | `AICOShareExtension` |
 
-## Prototype Scope
+## 주요 기능
 
-- UI flow and data structure exploration
-- Phase 1 app foundation with SwiftData models, local anonymous state, service intro gate, and tab placeholders
-- Phase 2 home dashboard, refined service intro, static information feed, and first-time Home tutorial overlay
-- No production authentication
-- No CloudKit Sharing
-- No real medical decision-making
-- No sensitive real user data
+- 실제 회원가입 없이 로컬 익명 사용자 상태로 앱을 탐색합니다.
+- 대상자 등록 후 A/B/C 기반 기록을 작성하고 SwiftData에 저장합니다.
+- 단계별 기본 카테고리와 커스텀 카테고리를 함께 사용합니다.
+- 기록에는 자유 메모와 로컬 사진 첨부를 포함할 수 있습니다.
+- 아카이브에서 저장 기록을 카드로 확인하고 날짜/단계 기준으로 필터링합니다.
+- 기록 상세 화면에서 A/B/C 선택 항목, 메모, 첨부 사진을 확인하고 단일 기록을 삭제할 수 있습니다.
+- 리포트 화면에서 일일/주간/월간 기록 요약과 A/B/C Top 3를 확인합니다.
+- 설정 화면에서 대상자, 카테고리, 알림 ON/OFF, 앱 데이터 삭제를 관리합니다.
+- WidgetKit 기반 빠른 기록 위젯을 통해 현재 대상자와 오늘 기록 요약을 확인합니다.
+- Share Extension 기반 사진 공유 진입을 통해 사진 앱에서 기록 시작 흐름을 검증합니다.
+
+## 기술 스택
+
+| 구분 | 기술 |
+| --- | --- |
+| 언어 | ![Swift](https://img.shields.io/badge/Swift-5.0-F05138?logo=swift&logoColor=white) |
+| UI | ![SwiftUI](https://img.shields.io/badge/SwiftUI-Declarative%20UI-0A84FF?logo=swift&logoColor=white) |
+| 로컬 저장 | ![SwiftData](https://img.shields.io/badge/SwiftData-iOS%2017%2B-FF8A00) |
+| 로컬 상태 | ![AppStorage](https://img.shields.io/badge/AppStorage-Local%20State-8E8E93) |
+| 사진 선택 | ![PhotosPicker](https://img.shields.io/badge/PhotosPicker-Photo%20Library-34C759) |
+| 위젯 | ![WidgetKit](https://img.shields.io/badge/WidgetKit-iOS%20Widget-34C759) |
+| 공유 확장 | ![Share Extension](https://img.shields.io/badge/Share%20Extension-iOS%20Share%20Sheet-5856D6) |
+| 딥링크 | ![URL Scheme](https://img.shields.io/badge/URL%20Scheme-aico%3A%2F%2F-007AFF) |
+| 공유 저장소 | ![App Group](https://img.shields.io/badge/App%20Group-Shared%20Container-6E6E73) |
+
+## 타겟 구성과 스키마
+
+| Target | 역할 | Bundle ID |
+| --- | --- | --- |
+| `Challenge4_AICO_Prototype` | 메인 iOS 앱 | `com.aico.prototype.challenge4` |
+| `AICOWidgetExtension` | 빠른 기록 위젯 | `com.aico.prototype.challenge4.AICOWidgetExtension` |
+| `AICOShareExtension` | 사진 공유 기반 기록 시작 확장 | `com.aico.prototype.challenge4.AICOShareExtension` |
+
+| Scheme | 구성 |
+| --- | --- |
+| `Challenge4_AICO_Prototype` | Main App 실행 스키마입니다. BuildAction에 Main App, Widget Extension, Share Extension이 포함되어 있습니다. |
+
+공통 App Group:
+
+```text
+group.com.wsysangyoung2730.aico
+```
+
+사용 URL Scheme:
+
+```text
+aico://quick-record?recipientId=<recipientId>
+aico://select-recipient-for-record
+aico://record-from-photo?attachmentId=<attachmentId>
+```
+
+## 데이터 흐름
+
+### 앱 내부 기록 흐름
+
+```text
+사용자
+  -> + 기록
+  -> 대상자 등록 여부 확인
+  -> 기록 튜토리얼 확인
+  -> A단계 상황 선택
+  -> B단계 행동 선택
+  -> C단계 대응/결과 선택
+  -> 메모/사진 첨부
+  -> SwiftData RecordEntry 저장
+  -> 아카이브/홈/리포트에서 기록 조회
+```
+
+### 위젯 데이터 흐름
+
+```text
+SwiftData 기록/대상자
+  -> WidgetSnapshotBuilder
+  -> WidgetSnapshotStore
+  -> App Group UserDefaults
+  -> AICOWidgetExtension
+  -> 빠른 기록 위젯 표시
+```
+
+### 사진 공유 확장 흐름
+
+```text
+iOS 사진 앱
+  -> 공유 버튼
+  -> AICOShareExtension
+  -> 공유 이미지 App Group 저장
+  -> aico://record-from-photo?attachmentId=<id>
+  -> Main App 딥링크 라우팅
+  -> RecordingEntryView
+  -> A/B/C 기록 흐름
+  -> RecordEntry attachmentNames 저장
+```
 
 ## Folder Structure
 
 ```text
 Challenge4_AICO_Prototype/
-├── README.md
-├── .gitignore
-├── Challenge4_AICO_Prototype/
-│   ├── App/
-│   │   └── AICOPrototypeApp.swift
-│   ├── Core/
-│   │   ├── Models/
-│   │   │   ├── RecipientProfile.swift
-│   │   │   ├── RecordEntry.swift
-│   │   │   ├── RecordCategory.swift
-│   │   │   └── ReportSummary.swift
-│   │   ├── Persistence/
-│   │   │   └── SwiftDataContainer.swift
-│   │   ├── State/
-│   │   │   └── AnonymousSessionState.swift
-│   │   └── Constants/
-│   │       └── AppConstants.swift
-│   ├── Features/
-│   │   ├── Onboarding/
-│   │   │   └── ServiceIntroView.swift
-│   │   ├── Home/
-│   │   │   └── HomeView.swift
-│   │   ├── Recording/
-│   │   │   └── RecordingEntryView.swift
-│   │   ├── Archive/
-│   │   │   └── ArchiveView.swift
-│   │   ├── Report/
-│   │   │   └── ReportView.swift
-│   │   └── Settings/
-│   │       └── SettingsView.swift
-│   ├── Shared/
-│   │   ├── Components/
-│   │   │   └── PlaceholderCardView.swift
-│   │   └── DesignSystem/
-│   │       └── AICOTheme.swift
-│   └── Resources/
-│       └── Assets.xcassets/
-└── Docs/
-    ├── product-flow.md
-    ├── git-convention.md
-    └── phase-plan.md
+├── README.md                                      # 프로젝트 개요와 개발 규칙
+├── .gitignore                                    # Git 제외 파일 규칙
+├── Challenge4_AICO_Prototype.xcodeproj/          # Xcode 프로젝트와 공유 스키마
+├── Challenge4_AICO_Prototype/                    # 메인 iOS 앱 소스
+│   ├── App/                                      # 앱 진입점, 루트 내비게이션, 딥링크 수신
+│   ├── Core/                                     # 도메인 모델, 저장소, 상태, 딥링크, 위젯/공유 유틸
+│   │   ├── Constants/                            # 앱 공통 상수
+│   │   ├── DeepLink/                             # aico:// 딥링크 타입과 라우터
+│   │   ├── Models/                               # SwiftData 모델과 리포트 모델
+│   │   ├── Persistence/                          # SwiftData ModelContainer 구성
+│   │   ├── Share/                                # 공유 사진 App Group 저장 유틸
+│   │   ├── Shared/                               # App Group 등 타겟 공통 상수
+│   │   ├── State/                                # 익명 사용자/튜토리얼 로컬 상태
+│   │   ├── Utilities/                            # 이미지 로컬 저장 유틸
+│   │   └── Widget/                               # 위젯 스냅샷 모델, 저장, 생성 로직
+│   ├── Features/                                 # 화면 단위 기능 모듈
+│   │   ├── Archive/                              # 기록 목록, 필터, 상세, 기록 삭제
+│   │   ├── Home/                                 # 홈 대시보드, 튜토리얼, 정보 피드
+│   │   ├── Onboarding/                           # 서비스 소개 화면
+│   │   ├── Recording/                            # 대상자 등록, A/B/C 기록, 사진 첨부
+│   │   ├── Report/                               # 일일/주간/월간 리포트
+│   │   └── Settings/                             # 대상자/카테고리/알림/데이터 관리
+│   ├── Resources/                                # 앱 아이콘과 에셋 카탈로그
+│   └── Shared/                                   # 공용 컴포넌트와 디자인 시스템
+├── AICOWidgetExtension/                          # WidgetKit 기반 빠른 기록 위젯
+├── AICOShareExtension/                           # iOS Share Sheet 기반 사진 기록 진입 확장
+└── Docs/                                         # 제품 흐름, Git 규칙, 단계별 계획 문서
 ```
 
 ## Git Strategy
@@ -170,15 +230,6 @@ Challenge4_AICO_Prototype/
 feat/#1-loginUI
 ```
 
-## Development Notes
-
-- 현재는 SwiftUI 소스 스켈레톤과 정보 구조 검증을 위한 문서 중심으로 구성합니다.
-- Phase 1에서는 SwiftData 컨테이너, 로컬 익명 상태, 서비스 소개 화면, 5개 탭 placeholder를 구현했습니다.
-- Phase 2에서는 서비스 소개를 다듬고 홈 대시보드, 최근 기록/간단 리포트/정보 피드 미리보기, 1회성 홈 튜토리얼 오버레이를 구현했습니다.
-- 루트의 `Challenge4_AICO_Prototype.xcodeproj`를 열어 현재 SwiftUI 프로토타입 앱을 실행할 수 있습니다.
-- 프로덕션 인증, CloudKit Sharing, 의료 판단 기능은 구현하지 않습니다.
-- 실제 사용자나 대상자의 민감 정보를 테스트 데이터로 사용하지 않습니다.
-
 ## Privacy Note
 
-Do not commit real personal data, real recipient information, medical records, photos, videos, credentials, or secrets.
+실제 개인정보, 대상자 정보, 의료 기록, 실제 사진/영상, 인증 정보, 비밀 키, 런타임 이미지 파일, provisioning profile은 커밋하지 않습니다.
