@@ -26,15 +26,12 @@ struct ReportView: View {
             .padding(AICOTheme.screenPadding)
         }
         .navigationTitle("리포트")
+        .navigationBarTitleDisplayMode(.inline)
         .background(AICOTheme.softBackground)
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("리포트")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-
             Text("기록상 자주 나타난 흐름을 차분히 돌아봐요.")
                 .font(.body)
                 .foregroundStyle(.secondary)
