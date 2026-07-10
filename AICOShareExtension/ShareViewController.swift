@@ -79,26 +79,28 @@ final class ShareViewController: UIViewController {
         }
 
         DispatchQueue.main.async {
-            self.statusLabel.text = "AICO 앱으로 이동하고 있어요..."
-            self.openContainingApp(with: url)
+            // self.statusLabel.text = "AICO 앱으로 이동하고 있어요..."
+            self.openURL(url)
+            self.finish()
         }
     }
 
-    private func openContainingApp(with url: URL) {
-        if openURLThroughResponderChain(url) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                self.finish()
-            }
-            return
-        }
-
-        extensionContext?.open(url) { [weak self] _ in
-            guard let self else { return }
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                self.finish()
-            }
-        }
+    @objc
+    @discardableResult
+    private func openURL(_ url: URL) -> Bool {
+      var responder: UIResponder? = self
+      while responder != nil {
+          if let application = responder as? UIApplication {
+              if #available(iOS 18.0, *) {
+                  application.open(url, options: [:], completionHandler: nil)
+                  return true
+              } else {
+                  return application.perform(#selector(openURL(_:)), with: url) != nil
+              }
+          }
+          responder = responder?.next
+      }
+      return false
     }
 
     @discardableResult
