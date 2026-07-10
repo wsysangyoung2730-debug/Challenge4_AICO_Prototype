@@ -21,6 +21,8 @@ struct AICOWidgetEntryView: View {
         switch family {
         case .systemSmall:
             smallWidget
+        case .systemLarge:
+            largeWidget
         default:
             mediumWidget
         }
@@ -93,6 +95,85 @@ struct AICOWidgetEntryView: View {
         }
         .padding()
         .containerBackground(AICOWidgetTheme.softBackground, for: .widget)
+    }
+
+    private var largeWidget: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Link(destination: recipientSelectURL) {
+                HStack(spacing: 6) {
+                    Text(entry.snapshot.defaultRecipientName)
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .lineLimit(1)
+
+                    Image(systemName: "chevron.down")
+                        .font(.caption)
+                }
+                .foregroundStyle(.primary)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("오늘 기록 \(entry.snapshot.todayRecordCount)회")
+                    .font(.title2)
+                    .fontWeight(.bold)
+
+                Text(behaviorText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("최근 기록")
+                    .font(.headline)
+
+                if entry.snapshot.recentRecords.isEmpty {
+                    Text("아직 기록이 없어요")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(entry.snapshot.recentRecords.prefix(3)) { record in
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(AICOWidgetTheme.primaryOrange)
+                                .frame(width: 6, height: 6)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(record.behaviorSummary)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .lineLimit(1)
+
+                                Text(record.contextSummary ?? record.recipientName)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer()
+
+            Link(destination: quickRecordURL) {
+                Label("기록하기", systemImage: "plus")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .background(AICOWidgetTheme.primaryOrange)
+                    .clipShape(Capsule())
+            }
+        }
+        .padding()
+        .containerBackground(AICOWidgetTheme.softBackground, for: .widget)
+    }
+
+    private var behaviorText: String {
+        if let behavior = entry.snapshot.mostFrequentBehavior {
+            return "\(behavior)이 반복 기록되었어요"
+        }
+        return "아직 오늘 기록이 없어요"
     }
 }
 
