@@ -9,9 +9,11 @@ struct RecordingEntryView: View {
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
 
     let preferredRecipientID: UUID?
+    let prefilledAttachmentID: String?
 
-    init(preferredRecipientID: UUID? = nil) {
+    init(preferredRecipientID: UUID? = nil, prefilledAttachmentID: String? = nil) {
         self.preferredRecipientID = preferredRecipientID
+        self.prefilledAttachmentID = prefilledAttachmentID
     }
 
     var body: some View {
@@ -20,7 +22,8 @@ struct RecordingEntryView: View {
                 ZStack {
                     ABCRecordingFlowView(
                         recipients: recipients,
-                        initialRecipient: activeRecipient
+                        initialRecipient: activeRecipient,
+                        prefilledAttachmentID: prefilledAttachmentID
                     )
 
                     if !sessionState.hasSeenRecordingTutorial {

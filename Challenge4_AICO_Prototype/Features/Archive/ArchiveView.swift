@@ -47,8 +47,6 @@ struct ArchiveView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AICOTheme.sectionSpacing) {
-                header
-
                 if records.isEmpty {
                     emptyState
                 } else {
@@ -89,20 +87,13 @@ struct ArchiveView: View {
             .padding(AICOTheme.screenPadding)
         }
         .navigationTitle("아카이브")
+        .navigationBarTitleDisplayMode(.inline)
         .background(AICOTheme.softBackground)
         .onChange(of: selectedStageFilter) {
             selectedCategoryName = nil
         }
         .onChange(of: selectedDateFilter) {
             selectedCategoryName = nil
-        }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("저장된 A/B/C 기록을 조건별로 다시 살펴봐요.")
-                .font(.body)
-                .foregroundStyle(.secondary)
         }
     }
 

@@ -16,19 +16,30 @@ struct AICOPrototypeApp: App {
 
 private struct RootView: View {
     @EnvironmentObject private var sessionState: AnonymousSessionState
+    @State private var pendingDeepLink: AICODeepLink?
 
     var body: some View {
-        if sessionState.hasSeenServiceIntro {
-            MainTabView()
-        } else {
-            ServiceIntroView {
+        Group {
+            if sessionState.hasSeenServiceIntro {
+                MainTabView(pendingDeepLink: $pendingDeepLink)
+            } else {
+                ServiceIntroView {
+                    sessionState.completeServiceIntro()
+                }
+            }
+        }
+        .onOpenURL { url in
+            guard let deepLink = AICODeepLinkRouter.parse(url) else { return }
+            if !sessionState.hasSeenServiceIntro {
                 sessionState.completeServiceIntro()
             }
+            pendingDeepLink = deepLink
         }
     }
 }
 
 private struct MainTabView: View {
+    @Binding var pendingDeepLink: AICODeepLink?
     @State private var selectedTab: MainNavigationTab = .home
     @State private var activeDeepLink: AICODeepLink?
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
@@ -91,14 +102,17 @@ private struct MainTabView: View {
                     RecordingEntryView(preferredRecipientID: recipientId)
                 case .selectRecipientForRecord:
                     QuickRecordRecipientPickerView()
+                case let .recordFromPhoto(attachmentId):
+                    RecordingEntryView(prefilledAttachmentID: attachmentId)
                 }
             }
         }
         .onAppear {
             updateWidgetSnapshot()
+            consumePendingDeepLink()
         }
-        .onOpenURL { url in
-            activeDeepLink = AICODeepLinkRouter.parse(url)
+        .onChange(of: pendingDeepLink) {
+            consumePendingDeepLink()
         }
     }
 
@@ -117,6 +131,12 @@ private struct MainTabView: View {
     private func updateWidgetSnapshot() {
         let snapshot = WidgetSnapshotBuilder.build(recipients: recipients, records: records)
         WidgetSnapshotStore.save(snapshot)
+    }
+
+    private func consumePendingDeepLink() {
+        guard let pendingDeepLink else { return }
+        activeDeepLink = pendingDeepLink
+        self.pendingDeepLink = nil
     }
 }
 

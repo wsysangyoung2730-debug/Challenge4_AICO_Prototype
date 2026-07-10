@@ -9,6 +9,7 @@ struct ABCRecordingFlowView: View {
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
 
     let recipients: [RecipientProfile]
+    let prefilledAttachmentID: String?
 
     @State private var currentRecipientID: UUID
     @State private var stepIndex = 0
@@ -25,11 +26,19 @@ struct ABCRecordingFlowView: View {
     @State private var recipientSwitchMessage: String?
     @State private var showsRecipientSelector = false
     @State private var showsExitAlert = false
+    @State private var showsRecipientSwitchAlert = false
+    @State private var didLoadPrefilledAttachment = false
+    @State private var hasSharedPhotoAttachment = false
 
     private let steps = RecordingStep.allCases
 
-    init(recipients: [RecipientProfile], initialRecipient: RecipientProfile) {
+    init(
+        recipients: [RecipientProfile],
+        initialRecipient: RecipientProfile,
+        prefilledAttachmentID: String? = nil
+    ) {
         self.recipients = recipients
+        self.prefilledAttachmentID = prefilledAttachmentID
         _currentRecipientID = State(initialValue: initialRecipient.id)
     }
 
@@ -46,7 +55,9 @@ struct ABCRecordingFlowView: View {
                             profileSwitcher
                             progressBar
                         }
-                        .padding(AICOTheme.screenPadding)
+                        .padding(.horizontal, AICOTheme.screenPadding)
+                        .padding(.top, 8)
+                        .padding(.bottom, 10)
 
                         ScrollView {
                             currentStepContent
@@ -65,7 +76,7 @@ struct ABCRecordingFlowView: View {
         }
         .background(AICOTheme.softBackground)
         .navigationTitle("기록하기")
-        .navigationBarTitleDisplayMode(.automatic)
+        .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(savedRecord == nil)
         .toolbar {
             if savedRecord == nil {
@@ -81,6 +92,9 @@ struct ABCRecordingFlowView: View {
         .onChange(of: selectedAttachmentItem) {
             Task { await saveSelectedAttachment() }
         }
+        .task {
+            loadPrefilledAttachmentIfNeeded()
+        }
         .alert("기록을 중단할까요?", isPresented: $showsExitAlert) {
             Button("계속 작성하기", role: .cancel) {}
             Button("나가기", role: .destructive) {
@@ -88,6 +102,15 @@ struct ABCRecordingFlowView: View {
             }
         } message: {
             Text("지금 나가면 작성 중인 기록이 모두 삭제됩니다.")
+        }
+        .alert("대상자를 변경할까요?", isPresented: $showsRecipientSwitchAlert) {
+            Button("계속 작성하기", role: .cancel) {}
+            Button("변경하기", role: .destructive) {
+                clearDraftForRecipientSwitch()
+                showsRecipientSelector = true
+            }
+        } message: {
+            Text("대상자를 바꾸면 현재 작성 중인 기록 내용이 모두 사라집니다.")
         }
         .alert("대상자 전환", isPresented: recipientSwitchMessageBinding) {
             Button("확인", role: .cancel) {}
@@ -116,7 +139,7 @@ struct ABCRecordingFlowView: View {
 
     private var profileSwitcher: some View {
         Button {
-            showsRecipientSelector = true
+            handleRecipientSwitcherTap()
         } label: {
             HStack(spacing: 12) {
                 recipientAvatar
@@ -161,7 +184,7 @@ struct ABCRecordingFlowView: View {
 
                 ForEach(recipients) { recipient in
                     Button {
-                        currentRecipientID = recipient.id
+                        selectRecipient(recipient)
                         showsRecipientSelector = false
                     } label: {
                         HStack(spacing: 12) {
@@ -205,7 +228,7 @@ struct ABCRecordingFlowView: View {
             .background(AICOTheme.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .padding(.horizontal, AICOTheme.screenPadding)
-            .padding(.top, 18)
+            .padding(.top, 8)
         }
     }
 
@@ -339,6 +362,13 @@ struct ABCRecordingFlowView: View {
             .buttonStyle(.plain)
 
             if !attachmentNames.isEmpty {
+                if hasSharedPhotoAttachment {
+                    Label("공유한 사진이 첨부되었어요.", systemImage: "checkmark.circle.fill")
+                        .font(.footnote)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(AICOTheme.primaryOrange)
+                }
+
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         ForEach(attachmentNames, id: \.self) { fileName in
@@ -433,6 +463,42 @@ struct ABCRecordingFlowView: View {
                 }
             }
         )
+    }
+
+    private var canSwitchRecipient: Bool {
+        steps[stepIndex] == .antecedent && savedRecord == nil
+    }
+
+    private var hasDraftContent: Bool {
+        !selectedAntecedents.isEmpty
+            || !selectedBehaviors.isEmpty
+            || !selectedConsequences.isEmpty
+            || !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || !attachmentNames.isEmpty
+    }
+
+    private func handleRecipientSwitcherTap() {
+        guard canSwitchRecipient else {
+            recipientSwitchMessage = "대상자 변경은 A단계에서만 가능해요."
+            return
+        }
+
+        if hasDraftContent {
+            showsRecipientSwitchAlert = true
+        } else {
+            showsRecipientSelector = true
+        }
+    }
+
+    private func selectRecipient(_ recipient: RecipientProfile) {
+        guard recipient.id != currentRecipientID else { return }
+        currentRecipientID = recipient.id
+        clearDraftForRecipientSwitch()
+    }
+
+    private func clearDraftForRecipientSwitch() {
+        attachmentNames.forEach { ImageStorageService.deleteImage(named: $0) }
+        resetFlow()
     }
 
     private func categories(for stage: RecordCategoryStage) -> [RecordCategory] {
@@ -538,6 +604,7 @@ struct ABCRecordingFlowView: View {
         note = ""
         selectedAttachmentItem = nil
         attachmentNames = []
+        hasSharedPhotoAttachment = false
         validationMessage = nil
         savedRecord = nil
     }
@@ -546,6 +613,24 @@ struct ABCRecordingFlowView: View {
         attachmentNames.forEach { ImageStorageService.deleteImage(named: $0) }
         resetFlow()
         dismiss()
+    }
+
+    private func loadPrefilledAttachmentIfNeeded() {
+        guard !didLoadPrefilledAttachment else { return }
+        didLoadPrefilledAttachment = true
+
+        guard let prefilledAttachmentID,
+              let data = SharedPhotoAttachmentStore.imageData(for: prefilledAttachmentID),
+              let fileName = try? ImageStorageService.saveImageData(data, prefix: "record")
+        else {
+            return
+        }
+
+        if !attachmentNames.contains(fileName) {
+            attachmentNames.append(fileName)
+        }
+        hasSharedPhotoAttachment = true
+        SharedPhotoAttachmentStore.deleteAttachment(id: prefilledAttachmentID)
     }
 
     @MainActor
