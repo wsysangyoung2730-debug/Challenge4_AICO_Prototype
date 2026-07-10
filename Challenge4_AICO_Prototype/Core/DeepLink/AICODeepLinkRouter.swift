@@ -15,6 +15,16 @@ enum AICODeepLinkRouter {
             return .quickRecord(recipientId: recipientId)
         case "select-recipient-for-record":
             return .selectRecipientForRecord
+        case "record-from-photo":
+            let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            let attachmentId = components?
+                .queryItems?
+                .first { $0.name == "attachmentId" }?
+                .value?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+
+            guard let attachmentId, !attachmentId.isEmpty else { return nil }
+            return .recordFromPhoto(attachmentId: attachmentId)
         default:
             return nil
         }

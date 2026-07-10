@@ -1,10 +1,5 @@
 import Foundation
 
-enum AICOAppGroup {
-    // App Group capability must be enabled manually for both app and widget targets.
-    static let identifier = "group.com.wsysangyoung2730.aico"
-}
-
 struct AICOWidgetSnapshot: Codable {
     let defaultRecipientId: String?
     let defaultRecipientName: String
