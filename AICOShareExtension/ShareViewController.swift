@@ -85,30 +85,36 @@ final class ShareViewController: UIViewController {
     }
 
     private func openContainingApp(with url: URL) {
-        extensionContext?.open(url) { [weak self] didOpen in
+        if openURLThroughResponderChain(url) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                self.finish()
+            }
+            return
+        }
+
+        extensionContext?.open(url) { [weak self] _ in
             guard let self else { return }
 
-            if !didOpen {
-                self.openURLThroughResponderChain(url)
-            }
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                 self.finish()
             }
         }
     }
 
-    private func openURLThroughResponderChain(_ url: URL) {
+    @discardableResult
+    private func openURLThroughResponderChain(_ url: URL) -> Bool {
         let selector = sel_registerName("openURL:")
         var responder: UIResponder? = self
 
         while let currentResponder = responder {
             if currentResponder.responds(to: selector) {
                 _ = currentResponder.perform(selector, with: url)
-                return
+                return true
             }
             responder = currentResponder.next
         }
+
+        return false
     }
 
     private func finish() {

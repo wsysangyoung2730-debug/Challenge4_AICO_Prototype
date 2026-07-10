@@ -21,6 +21,34 @@
                ReferencedContainer = "container:Challenge4_AICO_Prototype.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "100000000000000000000061"
+               BuildableName = "AICOWidgetExtension.appex"
+               BlueprintName = "AICOWidgetExtension"
+               ReferencedContainer = "container:Challenge4_AICO_Prototype.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "100000000000000000000062"
+               BuildableName = "AICOShareExtension.appex"
+               BlueprintName = "AICOShareExtension"
+               ReferencedContainer = "container:Challenge4_AICO_Prototype.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
