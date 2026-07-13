@@ -8,6 +8,9 @@ struct HomeView: View {
 
     @State private var selectedInfoItem: HomeInfoFeedItem?
     @State private var badgeReplayTrigger = 0
+    @State private var isHeroGreetingVisible = false
+    @State private var isHeroCharacterVisible = false
+    @State private var isHeroCharacterFloating = false
 
     private var recentRecords: [RecordEntry] {
         Array(records.prefix(5))
@@ -176,6 +179,8 @@ struct HomeView: View {
                 }
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
+                .opacity(isHeroGreetingVisible ? 1 : 0)
+                .offset(y: isHeroGreetingVisible ? 0 : 20)
 
                 Spacer(minLength: 12)
 
@@ -183,9 +188,59 @@ struct HomeView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 112, height: 112)
+                    .scaleEffect(isHeroCharacterVisible ? 1 : 0.96)
+                    .opacity(isHeroCharacterVisible ? 1 : 0)
+                    .offset(y: heroCharacterYOffset)
             }
         }
         .padding(.horizontal, 24)
+        .onAppear {
+            startHeroMotionIfNeeded()
+        }
+        .onDisappear {
+            isHeroCharacterFloating = false
+        }
+    }
+
+    private var heroCharacterYOffset: CGFloat {
+        let entranceOffset: CGFloat = isHeroCharacterVisible ? 0 : 20
+        let floatingOffset: CGFloat = isHeroCharacterFloating ? -4 : 4
+        return entranceOffset + floatingOffset
+    }
+
+    private func startHeroMotionIfNeeded() {
+        if sessionState.hasPlayedHomeHeroAnimationThisSession {
+            isHeroGreetingVisible = true
+            isHeroCharacterVisible = true
+            startHeroCharacterFloating()
+            return
+        }
+
+        isHeroGreetingVisible = false
+        isHeroCharacterVisible = false
+        isHeroCharacterFloating = false
+        sessionState.hasPlayedHomeHeroAnimationThisSession = true
+
+        withAnimation(.easeOut(duration: 0.55)) {
+            isHeroGreetingVisible = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.86)) {
+                isHeroCharacterVisible = true
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.48) {
+                startHeroCharacterFloating()
+            }
+        }
+    }
+
+    private func startHeroCharacterFloating() {
+        guard !isHeroCharacterFloating else { return }
+        withAnimation(.easeInOut(duration: 2.1).repeatForever(autoreverses: true)) {
+            isHeroCharacterFloating = true
+        }
     }
 
     private var recentRecordsSection: some View {
