@@ -12,81 +12,55 @@ struct HomeView: View {
         Array(records.prefix(5))
     }
 
-    private var weeklyRecordCount: Int {
-        let calendar = Calendar.current
-        return records.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .weekOfYear) }.count
-    }
-
     private var weeklyRecords: [RecordEntry] {
         let calendar = Calendar.current
         return records.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .weekOfYear) }
     }
 
-    private var weeklyTopBehavior: String {
-        let names = weeklyRecords.flatMap(\.behaviorCategories)
-        let top = Dictionary(grouping: names, by: { $0 })
-            .map { (name: $0.key, count: $0.value.count) }
-            .sorted {
-                if $0.count == $1.count {
-                    return $0.name < $1.name
-                }
-                return $0.count > $1.count
-            }
-            .first
+    private var weeklyRecordCount: Int {
+        weeklyRecords.count
+    }
 
-        return top.map { "\($0.name)이 자주 기록되었어요" } ?? "기록이 쌓이면 표시됩니다"
+    private var selectedRecipientName: String {
+        recipients.first?.nickname ?? "카이"
     }
 
     private let feedItems = [
         HomeInfoFeedItem(
-            title: "A/B/C 기록이란?",
-            summary: "상황, 행동, 대응을 나누어 기록하는 방식이에요.",
+            title: "A/B/C 관찰기록 알아보기",
+            summary: "아이코",
             detail: "A는 행동 전 상황, B는 관찰된 행동이나 신호, C는 이후 대응과 결과를 뜻합니다. AICO는 이 흐름을 보호자가 부담 없이 정리할 수 있게 돕는 방향으로 설계하고 있습니다.",
-            systemImage: "list.clipboard.fill"
+            systemImage: "pencil"
         ),
         HomeInfoFeedItem(
-            title: "기록이 쌓이면 어떤 점을 볼 수 있을까요?",
-            summary: "반복되는 맥락과 반응 변화를 돌아볼 수 있어요.",
-            detail: "기록이 충분히 쌓이면 아카이브와 리포트에서 자주 나타나는 상황, 행동, 대응을 다시 확인할 수 있습니다. Phase 2에서는 정보 구조만 검증합니다.",
-            systemImage: "chart.bar.fill"
+            title: "우리 아이의 행동 잘 관찰하기",
+            summary: "아이코",
+            detail: "기록이 충분히 쌓이면 아카이브와 리포트에서 자주 나타나는 상황, 행동, 대응을 다시 확인할 수 있습니다. 반복되는 흐름을 차분히 확인해보세요.",
+            systemImage: "magnifyingglass"
         ),
         HomeInfoFeedItem(
-            title: "보호자 간 기록을 공유하기 전 확인할 점",
-            summary: "공유 기능은 추후 별도 범위로 설계합니다.",
-            detail: "민감한 정보가 포함될 수 있으므로 공유 방식은 신중히 설계되어야 합니다. 현재 프로토타입에서는 공유 기능을 구현하지 않습니다.",
-            systemImage: "person.2.fill"
+            title: "기록으로 병원 상담 준비하기",
+            summary: "아이코",
+            detail: "상담 전 최근 기록을 돌아보면 상황, 행동, 대응을 더 구체적으로 설명할 수 있습니다. 민감한 정보가 포함될 수 있으니 공유 범위는 신중히 확인해주세요.",
+            systemImage: "clipboard"
         )
     ]
 
     var body: some View {
         ZStack {
+            Color.aicoHomeBackground.ignoresSafeArea()
+
             ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 30) {
                     headerSection
                     recentRecordsSection
-                    reportPreviewSection
+                    weeklyReportSection
                     informationFeedSection
                 }
+                .padding(.top, 72)
+                .padding(.bottom, 24)
             }
-            .background(AICOTheme.softBackground)
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button {
-                    } label: {
-                        Image(systemName: "bell")
-                    }
-                    .accessibilityLabel("알림")
-
-                    NavigationLink {
-                        SettingsView()
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .accessibilityLabel("설정")
-                }
-            }
+            .scrollIndicators(.hidden)
 
             if !sessionState.hasSeenHomeTutorial {
                 HomeTutorialOverlayView {
@@ -94,66 +68,103 @@ struct HomeView: View {
                 }
             }
         }
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $selectedInfoItem) { item in
             HomeInfoFeedDetailView(item: item)
         }
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(spacing: 14) {
-                Image("AICOLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 68, height: 68)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 18)
-                            .stroke(AICOTheme.primaryOrange.opacity(0.12), lineWidth: 1)
+        VStack(alignment: .leading, spacing: 22) {
+            HStack(alignment: .top) {
+                HStack(spacing: 8) {
+                    Image("AICOStar")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 36, height: 36)
+
+                    Text("이번주 \(weeklyRecordCount)개 기록했어요")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(.white, in: Capsule())
+                        .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+                }
+
+                Spacer()
+
+                HStack(spacing: 8) {
+                    Button {
+                    } label: {
+                        Image(systemName: "bell")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(.black)
+                            .frame(width: 48, height: 48)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .shadow(color: .black.opacity(0.12), radius: 16, x: 0, y: 8)
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("알림")
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(AppConstants.appName)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundStyle(AICOTheme.primaryOrange)
-
-                    Text("보호자를 위한 따뜻한 기록 도우미")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    NavigationLink {
+                        SettingsView()
+                    } label: {
+                        Image("AICOLogo")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 48, height: 48)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("설정")
                 }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("안녕하세요")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("\(selectedRecipientName)맘")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(AICOTheme.primaryOrange)
+                    + Text(" 님,")
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(.black)
 
-                Text("오늘의 기록을 가볍게 확인해볼까요?")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    Text("오늘도 힘내보아요")
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(.black)
+                }
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+                Spacer(minLength: 12)
+
+                Image("AICOcomponent")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 110, height: 110)
+                    .padding(.top, -16)
             }
         }
-        .padding(.horizontal, AICOTheme.screenPadding)
-        .padding(.top, 18)
-        .padding(.bottom, 24)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AICOTheme.softBackground)
+        .padding(.horizontal, 24)
     }
 
     private var recentRecordsSection: some View {
-        DashboardSection(
-            label: "01",
-            title: "최근 기록",
-            subtitle: "최근 5개의 기록을 빠르게 확인해요",
-            background: AICOTheme.cardBackground
-        ) {
+        VStack(alignment: .leading, spacing: 14) {
+            HomeSectionHeader(
+                title: "최근 기록",
+                subtitle: "최근 5개 기록을 빠르게 확인해보세요"
+            )
+
             if recentRecords.isEmpty {
-                PlaceholderCardView(
+                HomeEmptyCard(
                     title: "아직 기록이 없어요",
                     message: "기록을 시작하면 최근 기록이 이곳에 보여요.",
-                    systemImage: "clock.fill"
+                    systemImage: "clock"
                 )
+                .padding(.horizontal, 24)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
@@ -168,141 +179,110 @@ struct HomeView: View {
                                     record: record,
                                     recipientName: recipientName(for: record)
                                 )
-                                .frame(width: 270)
                             }
                             .buttonStyle(.plain)
                         }
                     }
+                    .padding(.horizontal, 24)
                 }
             }
         }
     }
 
-    private var reportPreviewSection: some View {
-        DashboardSection(
-            label: "02",
-            title: "간단 리포트",
-            subtitle: "이번 주 흐름을 미리 살펴봐요",
-            background: AICOTheme.reportBackground
-        ) {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    Text("이번 주 총 기록 수")
-                        .font(.headline)
+    private var weeklyReportSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HomeSectionHeader(
+                title: "핵심 주간 리포트",
+                subtitle: "이번주 핵심 정보를 빠르게 확인해보세요"
+            )
 
-                    Spacer()
-
-                    Text("\(weeklyRecordCount)개")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundStyle(AICOTheme.primaryOrange)
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    TotalRecordCard(count: weeklyRecordCount, recipients: recipients)
+                    SatisfactionCard(score: weeklySatisfactionScore)
                 }
 
-                Divider()
+                TopCategoryCard(
+                    stage: "A",
+                    title: "Top 3",
+                    items: topItems(in: weeklyRecords.flatMap(\.antecedentCategories))
+                )
 
-                ReportPreviewRow(title: "주목할 만한 변화", value: weeklyTopBehavior)
-                ReportPreviewRow(title: "A/B/C Top 3", value: "리포트에서 자세히 확인해요")
-
-                NavigationLink {
-                    ReportView()
-                } label: {
-                    Text("리포트 보기")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(AICOTheme.primaryOrange)
-                }
+                TopCategoryCard(
+                    stage: "B",
+                    title: "Top 3",
+                    items: topItems(in: weeklyRecords.flatMap(\.behaviorCategories))
+                )
             }
-            .padding()
-            .background(AICOTheme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+            .padding(8)
+            .background(.white, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: .black.opacity(0.05), radius: 12, x: 0, y: 0)
+            .padding(.horizontal, 24)
         }
     }
 
     private var informationFeedSection: some View {
-        DashboardSection(
-            label: "03",
-            title: "정보 피드",
-            subtitle: "기록에 도움이 되는 내용을 확인해요",
-            background: AICOTheme.feedBackground
-        ) {
-            VStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
+            HomeSectionHeader(
+                title: "정보 피드",
+                subtitle: "아이코와 함께 똑똑한 보호자가 되어보세요"
+            )
+
+            VStack(spacing: 12) {
                 ForEach(feedItems) { item in
                     Button {
                         selectedInfoItem = item
                     } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: item.systemImage)
-                                .foregroundStyle(AICOTheme.primaryOrange)
-                                .frame(width: 24)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(item.title)
-                                    .font(.headline)
-                                    .foregroundStyle(.primary)
-
-                                Text(item.summary)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            Spacer()
-
-                            Image(systemName: "chevron.right")
-                                .font(.footnote)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding()
-                        .background(AICOTheme.cardBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+                        HomeInfoFeedCard(item: item)
                     }
                     .buttonStyle(.plain)
                 }
             }
+            .padding(.horizontal, 24)
         }
+    }
+
+    private var weeklySatisfactionScore: Double {
+        guard !weeklyRecords.isEmpty else { return 0 }
+        let consequenceCount = weeklyRecords.flatMap(\.consequenceCategories).count
+        let score = 3.2 + min(Double(consequenceCount), 9) * 0.2
+        return min(score, 5.0)
     }
 
     private func recipientName(for record: RecordEntry) -> String {
-        recipients.first { $0.id == record.recipientId }?.nickname ?? "등록된 대상자"
+        recipients.first { $0.id == record.recipientId }?.nickname ?? selectedRecipientName
     }
 
+    private func topItems(in names: [String]) -> [String] {
+        let items = Dictionary(grouping: names, by: { $0 })
+            .map { (name: $0.key, count: $0.value.count) }
+            .sorted {
+                if $0.count == $1.count {
+                    return $0.name < $1.name
+                }
+                return $0.count > $1.count
+            }
+            .map(\.name)
+
+        return Array(items.prefix(3))
+    }
 }
 
-private struct DashboardSection<Content: View>: View {
-    let label: String
+private struct HomeSectionHeader: View {
     let title: String
     let subtitle: String
-    let background: Color
-    @ViewBuilder let content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 12) {
-                Text(label)
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundStyle(AICOTheme.primaryOrange)
-                    .frame(width: 34, height: 34)
-                    .background(AICOTheme.primaryOrange.opacity(0.12))
-                    .clipShape(Circle())
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.black)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.title2)
-                        .fontWeight(.bold)
-
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-            }
-
-            content
+            Text(subtitle)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color.aicoMutedText)
         }
-        .padding(AICOTheme.screenPadding)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(background)
+        .padding(.horizontal, 24)
     }
 }
 
@@ -311,91 +291,324 @@ private struct RecentRecordPreviewCard: View {
     let recipientName: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(recipientName)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
+        VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image("AICOLogo")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 36, height: 36)
+                        .clipShape(Circle())
 
-                    Text(record.createdAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text(recipientName)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
                 }
 
-                Spacer()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(record.createdAt.formatted(.dateTime.year().month(.twoDigits).day(.twoDigits).hour().minute()))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.aicoMutedText)
+                        .lineLimit(1)
 
-                Text(mainBehavior)
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundStyle(AICOTheme.primaryOrange)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(AICOTheme.primaryOrange.opacity(0.12))
-                    .clipShape(Capsule())
+                    Text(mainBehavior)
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.black)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
-            Text(categorySummary)
-                .font(.subheadline)
-                .foregroundStyle(.primary)
-                .lineLimit(2)
-
-            if let note = record.note, !note.isEmpty {
-                Text(note)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+            VStack(alignment: .leading, spacing: 12) {
+                CategoryPair(stage: "A", text: firstCategory(record.antecedentCategories, fallback: "상황 기록"))
+                CategoryPair(stage: "C", text: firstCategory(record.consequenceCategories, fallback: "대응 기록"))
             }
+
+            Text(noteText)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color.aicoBodyText)
+                .lineLimit(1)
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AICOTheme.cardBackground)
-        .overlay {
-            RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
-                .stroke(AICOTheme.primaryOrange.opacity(0.22), lineWidth: 1)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+        .padding(16)
+        .frame(width: 206, height: 282, alignment: .topLeading)
+        .background(.white, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 12, x: 0, y: 0)
     }
 
     private var mainBehavior: String {
-        record.behaviorCategories.first ?? "B단계 없음"
+        record.behaviorCategories.first ?? "행동을 기록했어요"
     }
 
-    private var categorySummary: String {
-        let antecedent = record.antecedentCategories.prefix(2).joined(separator: ", ")
-        let behavior = record.behaviorCategories.prefix(2).joined(separator: ", ")
-        let consequence = record.consequenceCategories.prefix(2).joined(separator: ", ")
+    private var noteText: String {
+        guard let note = record.note, !note.isEmpty else {
+            return "기록을 자세히 확인해보세요."
+        }
+        return note
+    }
 
-        let summary = [
-            antecedent.isEmpty ? nil : "A: \(antecedent)",
-            behavior.isEmpty ? nil : "B: \(behavior)",
-            consequence.isEmpty ? nil : "C: \(consequence)"
-        ]
-        .compactMap { $0 }
-        .joined(separator: " / ")
-
-        return summary.isEmpty ? "A/B/C 카테고리 없음" : summary
+    private func firstCategory(_ categories: [String], fallback: String) -> String {
+        categories.first ?? fallback
     }
 }
 
-private struct ReportPreviewRow: View {
-    let title: String
-    let value: String
+private struct CategoryPair: View {
+    let stage: String
+    let text: String
 
     var body: some View {
-        HStack(alignment: .top) {
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        HStack(spacing: 0) {
+            Text(stage)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 30, height: 30)
+                .background(AICOTheme.primaryOrange, in: Circle())
+
+            Text(text)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(AICOTheme.primaryOrange)
+                .lineLimit(1)
+                .padding(.horizontal, 10)
+                .frame(height: 30)
+                .background(AICOTheme.primaryOrange.opacity(0.1), in: Capsule())
+        }
+    }
+}
+
+private struct TotalRecordCard: View {
+    let count: Int
+    let recipients: [RecipientProfile]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top) {
+                Text("총 기록")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
+
+                Spacer()
+
+                HStack(spacing: -8) {
+                    ForEach(Array(recipients.prefix(2).enumerated()), id: \.offset) { _ in
+                        Image("AICOLogo")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 30, height: 30)
+                            .clipShape(Circle())
+                            .overlay {
+                                Circle().stroke(.white, lineWidth: 1)
+                            }
+                    }
+                }
+            }
 
             Spacer()
 
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .multilineTextAlignment(.trailing)
+            Text(String(format: "%02d", count))
+                .font(.system(size: 60, weight: .semibold))
+                .foregroundStyle(.white)
+            + Text(" 건")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, minHeight: 158, alignment: .leading)
+        .background(AICOTheme.primaryOrange, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private struct SatisfactionCard: View {
+    let score: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                Text("C")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(AICOTheme.primaryOrange, in: Circle())
+
+                Text("만족도")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(AICOTheme.primaryOrange)
+            }
+
+            Spacer()
+
+            Text(score > 0 ? String(format: "%.1f", score) : "0.0")
+                .font(.system(size: 60, weight: .semibold))
+                .foregroundStyle(AICOTheme.primaryOrange)
+            + Text(" / 5.0")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(AICOTheme.primaryOrange)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, minHeight: 158, alignment: .leading)
+        .background(AICOTheme.primaryOrange.opacity(0.1), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private struct TopCategoryCard: View {
+    let stage: String
+    let title: String
+    let items: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Text(stage)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(AICOTheme.primaryOrange, in: Circle())
+
+                Text(title)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.black)
+            }
+
+            FlexibleChipLayout(spacing: 8, rowSpacing: 8) {
+                ForEach(Array(displayItems.enumerated()), id: \.offset) { index, item in
+                    HStack(spacing: 8) {
+                        Text("\(index + 1)")
+                        Text(item)
+                    }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(AICOTheme.primaryOrange)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(AICOTheme.primaryOrange.opacity(0.1), in: Capsule())
+                }
+            }
+        }
+        .padding(15)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.aicoBorder, lineWidth: 1)
         }
     }
+
+    private var displayItems: [String] {
+        items.isEmpty ? ["기록 대기"] : items
+    }
+}
+
+private struct HomeInfoFeedCard: View {
+    let item: HomeInfoFeedItem
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: item.systemImage)
+                .font(.system(size: 20, weight: .medium))
+                .foregroundStyle(AICOTheme.primaryOrange)
+                .frame(width: 48, height: 48)
+                .background(AICOTheme.primaryOrange.opacity(0.1), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.title)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+
+                Text(item.summary)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color.aicoMutedText)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color.aicoMutedText)
+        }
+        .padding(16)
+        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 12, x: 0, y: 0)
+    }
+}
+
+private struct HomeEmptyCard: View {
+    let title: String
+    let message: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(AICOTheme.primaryOrange)
+                .frame(width: 48, height: 48)
+                .background(AICOTheme.primaryOrange.opacity(0.1), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 18, weight: .semibold))
+
+                Text(message)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color.aicoMutedText)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 12, x: 0, y: 0)
+    }
+}
+
+private struct FlexibleChipLayout: Layout {
+    let spacing: CGFloat
+    let rowSpacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? 0
+        var lineWidth: CGFloat = 0
+        var lineHeight: CGFloat = 0
+        var totalHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if lineWidth > 0, lineWidth + spacing + size.width > maxWidth {
+                totalHeight += lineHeight + rowSpacing
+                lineWidth = size.width
+                lineHeight = size.height
+            } else {
+                lineWidth += lineWidth == 0 ? size.width : spacing + size.width
+                lineHeight = max(lineHeight, size.height)
+            }
+        }
+
+        return CGSize(width: maxWidth, height: totalHeight + lineHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        var y = bounds.minY
+        var lineHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > bounds.minX, x + size.width > bounds.maxX {
+                x = bounds.minX
+                y += lineHeight + rowSpacing
+                lineHeight = 0
+            }
+
+            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            lineHeight = max(lineHeight, size.height)
+        }
+    }
+}
+
+private extension Color {
+    static let aicoHomeBackground = Color(red: 0.973, green: 0.973, blue: 0.973)
+    static let aicoMutedText = Color(red: 0.6, green: 0.6, blue: 0.6)
+    static let aicoBodyText = Color(red: 0.462, green: 0.462, blue: 0.462)
+    static let aicoBorder = Color(red: 0.949, green: 0.949, blue: 0.949)
 }
 
 #Preview {
