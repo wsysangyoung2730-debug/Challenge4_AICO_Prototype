@@ -57,7 +57,7 @@ struct HomeView: View {
                     weeklyReportSection
                     informationFeedSection
                 }
-                .padding(.top, 60)
+                .padding(.top, 16)
                 .padding(.bottom, 24)
             }
             .scrollIndicators(.hidden)
@@ -77,7 +77,7 @@ struct HomeView: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 24) {
             HStack(alignment: .center, spacing: 14) {
                 HStack(spacing: 10) {
                     Image("AICOStar")
