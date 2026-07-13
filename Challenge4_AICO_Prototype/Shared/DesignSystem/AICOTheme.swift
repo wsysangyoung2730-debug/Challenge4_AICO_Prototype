@@ -1,12 +1,18 @@
 import SwiftUI
 
 enum AICOTheme {
-    static let primaryOrange = Color(red: 0.95, green: 0.43, blue: 0.16)
-    static let softBackground = Color(red: 1.0, green: 0.97, blue: 0.92)
-    static let softOrangeBackground = Color(red: 1.0, green: 0.9, blue: 0.82)
-    static let sectionBackground = Color(red: 1.0, green: 0.95, blue: 0.88)
-    static let reportBackground = Color(red: 1.0, green: 0.91, blue: 0.8)
-    static let feedBackground = Color(red: 0.98, green: 0.96, blue: 0.92)
+    static let primaryOrange = Color(red: 0.914, green: 0.231, blue: 0.031)
+    static let softPeach = Color(red: 0.965, green: 0.898, blue: 0.878)
+    static let appBackground = Color(red: 0.973, green: 0.973, blue: 0.973)
+    static let cardGray = Color(red: 0.949, green: 0.949, blue: 0.949)
+    static let textGray = Color(red: 0.6, green: 0.6, blue: 0.6)
+    static let darkGray = Color(red: 0.463, green: 0.463, blue: 0.463)
+
+    static let softBackground = appBackground
+    static let softOrangeBackground = softPeach
+    static let sectionBackground = appBackground
+    static let reportBackground = softPeach
+    static let feedBackground = appBackground
     static let cardBackground = Color.white
     static let cornerRadius: CGFloat = 8
     static let screenPadding: CGFloat = 20

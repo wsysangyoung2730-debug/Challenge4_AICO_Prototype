@@ -17,7 +17,7 @@ struct CategorySelectionStepView: View {
 
                 Text(helperText)
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
             }
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 10)], spacing: 10) {
@@ -40,7 +40,7 @@ struct CategorySelectionStepView: View {
             Text(selectedNames.isEmpty ? "항목을 선택하면 아래에서 다음 단계로 이동할 수 있어요." : "\(selectedNames.count)개 선택됨")
                 .font(.footnote)
                 .fontWeight(selectedNames.isEmpty ? .regular : .semibold)
-                .foregroundStyle(selectedNames.isEmpty ? .secondary : AICOTheme.primaryOrange)
+                .foregroundStyle(selectedNames.isEmpty ? AICOTheme.textGray : AICOTheme.primaryOrange)
         }
     }
 
@@ -66,7 +66,7 @@ struct CategorySelectionStepView: View {
                 .foregroundStyle(isSelected ? .white : .primary)
                 .overlay {
                     RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
-                        .stroke(isSelected ? AICOTheme.primaryOrange : Color.secondary.opacity(0.18), lineWidth: 1)
+                        .stroke(isSelected ? AICOTheme.primaryOrange : AICOTheme.cardGray, lineWidth: 1)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
         }

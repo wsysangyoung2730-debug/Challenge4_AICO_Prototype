@@ -60,7 +60,7 @@ struct ArchiveView: View {
                     Text(resultSummary)
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundStyle(filteredRecords.isEmpty ? .secondary : AICOTheme.primaryOrange)
+                        .foregroundStyle(filteredRecords.isEmpty ? AICOTheme.textGray : AICOTheme.primaryOrange)
 
                     if filteredRecords.isEmpty {
                         filteredEmptyState
@@ -110,7 +110,7 @@ struct ArchiveView: View {
 
                 Text("+ 기록 버튼을 눌러 첫 기록을 남기면 이곳에서 다시 확인할 수 있어요.")
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
             }
 
             Text("기록 시작하기")

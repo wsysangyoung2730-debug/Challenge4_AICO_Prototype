@@ -34,7 +34,7 @@ struct ReportView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("기록상 자주 나타난 흐름을 차분히 돌아봐요.")
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AICOTheme.textGray)
         }
     }
 
@@ -191,7 +191,7 @@ struct ReportView: View {
 
                 Text("이 내용은 기록 빈도를 요약한 것이며 의료적 판단이 아니에요.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
             }
         }
     }
@@ -231,7 +231,7 @@ struct ReportView: View {
                 if ReportCalculator.topCombinations(records: records).isEmpty {
                     Text("반복 조합을 보려면 기록이 조금 더 필요해요.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AICOTheme.textGray)
                 }
             }
         }
@@ -241,7 +241,7 @@ struct ReportView: View {
         ReportCard(title: "다음 달 참고") {
             Text("자주 기록된 상황을 다음 달에도 함께 확인해보세요.")
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AICOTheme.textGray)
         }
     }
 }
@@ -390,7 +390,7 @@ private struct ReportMetricCardView: View {
                     .foregroundStyle(AICOTheme.primaryOrange)
                 Text(caption)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
             }
         }
         .padding()
@@ -431,7 +431,7 @@ private struct ReportTopCategoryRow: View {
             if items.isEmpty {
                 Text("아직 선택된 항목이 없어요.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
             } else {
                 HStack(spacing: 8) {
                     ForEach(items, id: \.name) { item in
@@ -464,7 +464,7 @@ private struct ReportBarRowView: View {
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.secondary.opacity(0.14))
+                        .fill(AICOTheme.cardGray)
                     Capsule()
                         .fill(AICOTheme.primaryOrange)
                         .frame(width: max(6, proxy.size.width * CGFloat(count) / CGFloat(max(maxCount, 1))))
@@ -475,7 +475,7 @@ private struct ReportBarRowView: View {
             Text("\(count)")
                 .font(.caption)
                 .fontWeight(.bold)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AICOTheme.textGray)
                 .frame(width: 28, alignment: .trailing)
         }
     }

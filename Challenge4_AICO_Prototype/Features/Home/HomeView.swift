@@ -48,7 +48,7 @@ struct HomeView: View {
 
     var body: some View {
         ZStack {
-            Color.aicoHomeBackground.ignoresSafeArea()
+            AICOTheme.appBackground.ignoresSafeArea()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 30) {
@@ -280,7 +280,7 @@ private struct HomeSectionHeader: View {
 
             Text(subtitle)
                 .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Color.aicoMutedText)
+                .foregroundStyle(AICOTheme.textGray)
         }
         .padding(.horizontal, 24)
     }
@@ -309,7 +309,7 @@ private struct RecentRecordPreviewCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(record.createdAt.formatted(.dateTime.year().month(.twoDigits).day(.twoDigits).hour().minute()))
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.aicoMutedText)
+                        .foregroundStyle(AICOTheme.textGray)
                         .lineLimit(1)
 
                     Text(mainBehavior)
@@ -327,7 +327,7 @@ private struct RecentRecordPreviewCard: View {
 
             Text(noteText)
                 .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Color.aicoBodyText)
+                .foregroundStyle(AICOTheme.darkGray)
                 .lineLimit(1)
         }
         .padding(16)
@@ -487,7 +487,7 @@ private struct TopCategoryCard: View {
         .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.aicoBorder, lineWidth: 1)
+                .stroke(AICOTheme.cardGray, lineWidth: 1)
         }
     }
 
@@ -515,14 +515,14 @@ private struct HomeInfoFeedCard: View {
 
                 Text(item.summary)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.aicoMutedText)
+                    .foregroundStyle(AICOTheme.textGray)
             }
 
             Spacer()
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color.aicoMutedText)
+                .foregroundStyle(AICOTheme.textGray)
         }
         .padding(16)
         .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -549,7 +549,7 @@ private struct HomeEmptyCard: View {
 
                 Text(message)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.aicoMutedText)
+                    .foregroundStyle(AICOTheme.textGray)
             }
         }
         .padding(16)
@@ -602,13 +602,6 @@ private struct FlexibleChipLayout: Layout {
             lineHeight = max(lineHeight, size.height)
         }
     }
-}
-
-private extension Color {
-    static let aicoHomeBackground = Color(red: 0.973, green: 0.973, blue: 0.973)
-    static let aicoMutedText = Color(red: 0.6, green: 0.6, blue: 0.6)
-    static let aicoBodyText = Color(red: 0.462, green: 0.462, blue: 0.462)
-    static let aicoBorder = Color(red: 0.949, green: 0.949, blue: 0.949)
 }
 
 #Preview {

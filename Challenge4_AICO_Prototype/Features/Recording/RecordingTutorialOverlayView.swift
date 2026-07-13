@@ -55,7 +55,7 @@ struct RecordingTutorialOverlayView: View {
 
                     Text(currentStep.description)
                         .font(.body)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AICOTheme.textGray)
                         .multilineTextAlignment(.center)
                 }
 

@@ -64,7 +64,7 @@ struct HomeTutorialOverlayView: View {
 
                     Text(steps[currentStepIndex].description)
                         .font(.body)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AICOTheme.textGray)
 
                     Text("\(currentStepIndex + 1) / \(steps.count)")
                         .font(.footnote)
@@ -74,7 +74,7 @@ struct HomeTutorialOverlayView: View {
 
                 HStack {
                     Button("건너뛰기", action: onComplete)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AICOTheme.textGray)
 
                     Spacer()
 

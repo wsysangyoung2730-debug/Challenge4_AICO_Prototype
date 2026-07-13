@@ -61,7 +61,7 @@ struct RecordDetailView: View {
 
             Text(record.createdAt.formatted(date: .complete, time: .shortened))
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AICOTheme.textGray)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -77,7 +77,7 @@ struct RecordDetailView: View {
             if categories.isEmpty {
                 Text("선택된 항목이 없어요.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
             } else {
                 FlowChipLayout(items: categories)
             }
@@ -95,7 +95,7 @@ struct RecordDetailView: View {
 
             Text(note)
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AICOTheme.textGray)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)

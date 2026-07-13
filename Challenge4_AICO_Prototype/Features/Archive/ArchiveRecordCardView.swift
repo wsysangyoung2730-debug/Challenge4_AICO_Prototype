@@ -14,7 +14,7 @@ struct ArchiveRecordCardView: View {
 
                     Text(record.createdAt.formatted(date: .abbreviated, time: .shortened))
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AICOTheme.textGray)
                 }
 
                 Spacer()
@@ -35,7 +35,7 @@ struct ArchiveRecordCardView: View {
             if let note = record.note, !note.isEmpty {
                 Text(note)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
                     .lineLimit(2)
                     .padding(.top, 2)
             }
@@ -65,7 +65,7 @@ struct ArchiveStageSummaryRow: View {
 
             Text(summaryText)
                 .font(.subheadline)
-                .foregroundStyle(values.isEmpty ? .secondary : .primary)
+                .foregroundStyle(values.isEmpty ? AICOTheme.textGray : .primary)
                 .lineLimit(2)
 
             Spacer()

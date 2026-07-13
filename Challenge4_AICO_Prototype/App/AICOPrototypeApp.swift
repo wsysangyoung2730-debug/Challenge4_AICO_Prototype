@@ -111,7 +111,7 @@ private struct FloatingBottomNavigationBar: View {
                     } label: {
                         Image(systemName: tab.systemImage)
                             .font(.system(size: 20, weight: .semibold))
-                            .foregroundStyle(selectedTab == tab ? AICOTheme.primaryOrange : Color.black.opacity(0.82))
+                            .foregroundStyle(selectedTab == tab ? AICOTheme.primaryOrange : AICOTheme.darkGray)
                             .frame(maxWidth: .infinity)
                             .frame(height: 48)
                             .background {
@@ -143,7 +143,7 @@ private struct FloatingBottomNavigationBar: View {
             } label: {
                 Image(systemName: "square.and.pencil")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color.black.opacity(0.82))
+                    .foregroundStyle(AICOTheme.darkGray)
                     .frame(width: 48, height: 48)
                     .padding(4)
                     .background(.ultraThinMaterial, in: Capsule())

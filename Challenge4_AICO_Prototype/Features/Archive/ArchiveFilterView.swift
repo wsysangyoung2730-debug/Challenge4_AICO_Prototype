@@ -54,7 +54,7 @@ struct ArchiveFilterView: View {
             Text(title)
                 .font(.caption)
                 .fontWeight(.bold)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AICOTheme.textGray)
 
             content()
         }
