@@ -321,8 +321,8 @@ private struct RecentRecordPreviewCard: View {
     let fallbackRecipientName: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     HomeRecipientAvatar(fileName: recipient?.profileImageName, size: 36)
 
@@ -332,7 +332,7 @@ private struct RecentRecordPreviewCard: View {
                         .lineLimit(1)
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(record.createdAt.formatted(.dateTime.year().month(.twoDigits).day(.twoDigits).hour().minute()))
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(AICOTheme.textGray)
@@ -356,7 +356,7 @@ private struct RecentRecordPreviewCard: View {
             Spacer(minLength: 0)
         }
         .padding(16)
-        .frame(width: 206, height: 312, alignment: .topLeading)
+        .frame(width: 206, height: 276, alignment: .topLeading)
         .background(.white, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: .black.opacity(0.05), radius: 12, x: 0, y: 0)
     }
@@ -398,8 +398,7 @@ private struct RecentRecordPreviewCard: View {
     }
 
     private var categoryAreaHeight: CGFloat {
-        let rowCount = max(categoryRows.count, 1)
-        return CGFloat(rowCount * 30 + max(rowCount - 1, 0) * 8)
+        98
     }
 }
 
