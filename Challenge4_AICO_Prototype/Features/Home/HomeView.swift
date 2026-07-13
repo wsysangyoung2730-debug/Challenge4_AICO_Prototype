@@ -21,6 +21,11 @@ struct HomeView: View {
         weeklyRecords.count
     }
 
+    private var monthlyRecordCount: Int {
+        let calendar = Calendar.current
+        return records.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .month) }.count
+    }
+
     private var selectedRecipientName: String {
         recipients.first?.nickname ?? "카이"
     }
@@ -109,13 +114,13 @@ struct HomeView: View {
                         .scaledToFit()
                         .frame(width: 36, height: 36)
 
-                    Text("이번주 \(weeklyRecordCount)개 기록했어요")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.black)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(.white, in: Capsule())
-                        .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+                    HomeWeeklyBadgeText(
+                        weeklyCount: weeklyRecordCount,
+                        monthlyCount: monthlyRecordCount,
+                        hasPlayedAnimation: sessionState.hasPlayedHomeBadgeAnimationThisSession
+                    ) {
+                        sessionState.hasPlayedHomeBadgeAnimationThisSession = true
+                    }
                 }
                 .frame(height: 48, alignment: .center)
 
@@ -294,6 +299,159 @@ struct HomeView: View {
             .map(\.name)
 
         return Array(items.prefix(3))
+    }
+}
+
+private struct HomeWeeklyBadgeText: View {
+    let weeklyCount: Int
+    let monthlyCount: Int
+    let hasPlayedAnimation: Bool
+    let markAnimationPlayed: () -> Void
+
+    @State private var currentMessage: BadgeMessage
+    @State private var typedCount: Int
+    @State private var typingTask: Task<Void, Never>?
+
+    init(
+        weeklyCount: Int,
+        monthlyCount: Int,
+        hasPlayedAnimation: Bool,
+        markAnimationPlayed: @escaping () -> Void
+    ) {
+        self.weeklyCount = weeklyCount
+        self.monthlyCount = monthlyCount
+        self.hasPlayedAnimation = hasPlayedAnimation
+        self.markAnimationPlayed = markAnimationPlayed
+
+        let finalMessage = BadgeMessage.weekly(count: weeklyCount)
+        _currentMessage = State(initialValue: finalMessage)
+        _typedCount = State(initialValue: finalMessage.characterCount)
+    }
+
+    var body: some View {
+        renderedText
+            .font(.system(size: 14, weight: .semibold))
+            .lineLimit(1)
+            .frame(minWidth: 156, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(.white, in: Capsule())
+            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+            .onAppear {
+                guard !hasPlayedAnimation else {
+                    setFinalMessage()
+                    return
+                }
+                startTypingAnimation()
+            }
+            .onDisappear {
+                typingTask?.cancel()
+                typingTask = nil
+            }
+            .onChange(of: weeklyCount) { _, _ in
+                guard hasPlayedAnimation || typingTask == nil else { return }
+                setFinalMessage()
+            }
+    }
+
+    private var renderedText: Text {
+        let visibleCount = min(typedCount, currentMessage.characterCount)
+
+        if let emphasized = currentMessage.emphasizedText {
+            let prefix = currentMessage.prefixText
+            let suffix = currentMessage.suffixText
+            let prefixCount = prefix.count
+            let emphasizedCount = emphasized.count
+
+            let visiblePrefix = String(prefix.prefix(visibleCount))
+            let emphasizedVisibleCount = max(0, min(visibleCount - prefixCount, emphasizedCount))
+            let visibleEmphasis = String(emphasized.prefix(emphasizedVisibleCount))
+            let suffixVisibleCount = max(0, visibleCount - prefixCount - emphasizedCount)
+            let visibleSuffix = String(suffix.prefix(suffixVisibleCount))
+
+            return Text(visiblePrefix).foregroundStyle(.black)
+            + Text(visibleEmphasis).foregroundStyle(AICOTheme.primaryOrange)
+            + Text(visibleSuffix).foregroundStyle(.black)
+        }
+
+        return Text(String(currentMessage.fullText.prefix(visibleCount)))
+            .foregroundStyle(.black)
+    }
+
+    private func startTypingAnimation() {
+        typingTask?.cancel()
+        markAnimationPlayed()
+
+        typingTask = Task {
+            let encouragements = [
+                BadgeMessage.plain("오늘도 천천히 살펴봐요"),
+                BadgeMessage.plain("작은 기록이 큰 도움이 돼요"),
+                BadgeMessage.plain("잘하고 있어요"),
+                BadgeMessage.plain("차근차근 확인해봐요")
+            ].shuffled().prefix(2)
+
+            let messages = [
+                BadgeMessage.monthly(count: monthlyCount),
+                BadgeMessage.weekly(count: weeklyCount)
+            ] + encouragements + [
+                BadgeMessage.weekly(count: weeklyCount)
+            ]
+
+            for message in messages {
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    currentMessage = message
+                    typedCount = 0
+                }
+
+                for count in 0...message.characterCount {
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run {
+                        typedCount = count
+                    }
+                    try? await Task.sleep(nanoseconds: 42_000_000)
+                }
+
+                try? await Task.sleep(nanoseconds: 650_000_000)
+            }
+
+            await MainActor.run {
+                setFinalMessage()
+                typingTask = nil
+            }
+        }
+    }
+
+    private func setFinalMessage() {
+        let finalMessage = BadgeMessage.weekly(count: weeklyCount)
+        currentMessage = finalMessage
+        typedCount = finalMessage.characterCount
+    }
+}
+
+private struct BadgeMessage {
+    let prefixText: String
+    let emphasizedText: String?
+    let suffixText: String
+
+    var fullText: String {
+        prefixText + (emphasizedText ?? "") + suffixText
+    }
+
+    var characterCount: Int {
+        fullText.count
+    }
+
+    static func weekly(count: Int) -> BadgeMessage {
+        BadgeMessage(prefixText: "이번 주 ", emphasizedText: "\(count)회", suffixText: " 기록했어요")
+    }
+
+    static func monthly(count: Int) -> BadgeMessage {
+        BadgeMessage(prefixText: "이번 달 ", emphasizedText: "\(count)회", suffixText: " 기록했어요")
+    }
+
+    static func plain(_ text: String) -> BadgeMessage {
+        BadgeMessage(prefixText: text, emphasizedText: nil, suffixText: "")
     }
 }
 

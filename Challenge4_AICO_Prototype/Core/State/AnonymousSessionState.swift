@@ -28,6 +28,8 @@ final class AnonymousSessionState: ObservableObject {
         didSet { defaults.set(hasSeenRecordingTutorial, forKey: Key.hasSeenRecordingTutorial) }
     }
 
+    @Published var hasPlayedHomeBadgeAnimationThisSession = false
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.isAnonymousUser = defaults.object(forKey: Key.isAnonymousUser) as? Bool ?? true
