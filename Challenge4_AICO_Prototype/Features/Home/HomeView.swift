@@ -238,7 +238,7 @@ struct HomeView: View {
 
     private func startHeroCharacterFloating() {
         guard !isHeroCharacterFloating else { return }
-        withAnimation(.easeInOut(duration: 2.1).repeatForever(autoreverses: true)) {
+        withAnimation(.easeInOut(duration: 1.85).repeatForever(autoreverses: true)) {
             isHeroCharacterFloating = true
         }
     }
