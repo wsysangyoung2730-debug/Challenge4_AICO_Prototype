@@ -347,8 +347,7 @@ private struct HomeWeeklyBadgeText: View {
             .font(.system(size: 14, weight: .semibold))
             .lineLimit(2)
             .multilineTextAlignment(.leading)
-            .frame(maxWidth: 168, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
+            .fixedSize(horizontal: true, vertical: true)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(.white, in: Capsule())
@@ -403,10 +402,10 @@ private struct HomeWeeklyBadgeText: View {
 
         typingTask = Task {
             let encouragements = [
-                BadgeMessage.plain("오늘도 천천히 살펴봐요"),
-                BadgeMessage.plain("작은 기록이 큰 도움이 돼요"),
+                BadgeMessage.plain("오늘도 천천히\n살펴봐요"),
+                BadgeMessage.plain("작은 기록이\n큰 도움이 돼요"),
                 BadgeMessage.plain("잘하고 있어요"),
-                BadgeMessage.plain("차근차근 확인해봐요")
+                BadgeMessage.plain("차근차근\n확인해봐요")
             ].shuffled().prefix(2)
 
             let messages = [
