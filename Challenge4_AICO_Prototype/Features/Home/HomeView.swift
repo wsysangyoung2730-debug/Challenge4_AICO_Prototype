@@ -25,17 +25,17 @@ struct HomeView: View {
         recipients.first?.nickname ?? "카이"
     }
 
-    private var weeklyRepresentativeRecipient: RecipientProfile? {
-        guard !weeklyRecords.isEmpty else { return nil }
+    private var weeklyRecordRecipients: [RecipientProfile] {
+        guard !weeklyRecords.isEmpty else { return [] }
 
-        let groupedRecords = Dictionary(grouping: weeklyRecords, by: \.recipientId)
+        let recordsByRecipient = Dictionary(grouping: weeklyRecords, by: \.recipientId)
         let mostRecentIndexByRecipient = weeklyRecords.enumerated().reduce(into: [UUID: Int]()) { result, item in
             if result[item.element.recipientId] == nil {
                 result[item.element.recipientId] = item.offset
             }
         }
 
-        let representativeId = groupedRecords
+        return recordsByRecipient
             .map { (recipientId: $0.key, count: $0.value.count) }
             .sorted {
                 if $0.count == $1.count {
@@ -44,11 +44,9 @@ struct HomeView: View {
                 }
                 return $0.count > $1.count
             }
-            .first?
-            .recipientId
-
-        guard let representativeId else { return nil }
-        return recipients.first { $0.id == representativeId }
+            .compactMap { item in
+                recipients.first { $0.id == item.recipientId }
+            }
     }
 
     private let feedItems = [
@@ -225,7 +223,7 @@ struct HomeView: View {
 
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
-                    TotalRecordCard(count: weeklyRecordCount, recipient: weeklyRepresentativeRecipient)
+                    TotalRecordCard(count: weeklyRecordCount, recipients: weeklyRecordRecipients)
                     SatisfactionCard(score: weeklySatisfactionScore)
                 }
 
@@ -350,12 +348,12 @@ private struct RecentRecordPreviewCard: View {
 
             categoryArea
 
-            Spacer(minLength: 0)
-
             Text(noteText)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(AICOTheme.darkGray)
                 .lineLimit(1)
+
+            Spacer(minLength: 0)
         }
         .padding(16)
         .frame(width: 206, height: 312, alignment: .topLeading)
@@ -383,10 +381,8 @@ private struct RecentRecordPreviewCard: View {
             ForEach(categoryRows, id: \.stage) { row in
                 CategoryPair(stage: row.stage, text: row.text)
             }
-
-            Spacer(minLength: 0)
         }
-        .frame(height: 106, alignment: .topLeading)
+        .frame(height: categoryAreaHeight, alignment: .topLeading)
     }
 
     private var categoryRows: [(stage: String, text: String)] {
@@ -399,6 +395,11 @@ private struct RecentRecordPreviewCard: View {
             guard let text = row.1, !text.isEmpty else { return nil }
             return (row.0, text)
         }
+    }
+
+    private var categoryAreaHeight: CGFloat {
+        let rowCount = max(categoryRows.count, 1)
+        return CGFloat(rowCount * 30 + max(rowCount - 1, 0) * 8)
     }
 }
 
@@ -449,7 +450,7 @@ private struct CategoryPair: View {
 
 private struct TotalRecordCard: View {
     let count: Int
-    let recipient: RecipientProfile?
+    let recipients: [RecipientProfile]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -460,10 +461,7 @@ private struct TotalRecordCard: View {
 
                 Spacer()
 
-                HomeRecipientAvatar(fileName: recipient?.profileImageName, size: 30)
-                    .overlay {
-                        Circle().stroke(.white, lineWidth: 1)
-                    }
+                WeeklyProfileStack(recipients: recipients)
             }
 
             Spacer()
@@ -478,6 +476,48 @@ private struct TotalRecordCard: View {
         .padding(16)
         .frame(maxWidth: .infinity, minHeight: 158, alignment: .leading)
         .background(AICOTheme.primaryOrange, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private struct WeeklyProfileStack: View {
+    let recipients: [RecipientProfile]
+
+    private var visibleRecipients: [RecipientProfile] {
+        Array(recipients.prefix(3))
+    }
+
+    private var remainingCount: Int {
+        max(recipients.count - visibleRecipients.count, 0)
+    }
+
+    var body: some View {
+        HStack(spacing: -8) {
+            if visibleRecipients.isEmpty {
+                avatar(fileName: nil)
+            } else {
+                ForEach(visibleRecipients) { recipient in
+                    avatar(fileName: recipient.profileImageName)
+                }
+
+                if remainingCount > 0 {
+                    Text("+\(remainingCount)")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(AICOTheme.primaryOrange)
+                        .frame(width: 30, height: 30)
+                        .background(.white, in: Circle())
+                        .overlay {
+                            Circle().stroke(.white, lineWidth: 1)
+                        }
+                }
+            }
+        }
+    }
+
+    private func avatar(fileName: String?) -> some View {
+        HomeRecipientAvatar(fileName: fileName, size: 30)
+            .overlay {
+                Circle().stroke(.white, lineWidth: 1)
+            }
     }
 }
 
