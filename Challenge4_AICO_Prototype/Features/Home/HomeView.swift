@@ -57,7 +57,7 @@ struct HomeView: View {
                     weeklyReportSection
                     informationFeedSection
                 }
-                .padding(.top, 72)
+                .padding(.top, 60)
                 .padding(.bottom, 24)
             }
             .scrollIndicators(.hidden)
@@ -77,9 +77,9 @@ struct HomeView: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            HStack(alignment: .top) {
-                HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .center, spacing: 14) {
+                HStack(spacing: 10) {
                     Image("AICOStar")
                         .resizable()
                         .scaledToFit()
@@ -93,10 +93,11 @@ struct HomeView: View {
                         .background(.white, in: Capsule())
                         .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
                 }
+                .frame(height: 48, alignment: .center)
 
                 Spacer()
 
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
                     Button {
                     } label: {
                         Image(systemName: "bell")
@@ -145,7 +146,7 @@ struct HomeView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 110, height: 110)
-                    .padding(.top, -16)
+                    .padding(.top, -4)
             }
         }
         .padding(.horizontal, 24)
