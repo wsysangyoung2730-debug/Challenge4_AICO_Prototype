@@ -25,6 +25,32 @@ struct HomeView: View {
         recipients.first?.nickname ?? "카이"
     }
 
+    private var weeklyRepresentativeRecipient: RecipientProfile? {
+        guard !weeklyRecords.isEmpty else { return nil }
+
+        let groupedRecords = Dictionary(grouping: weeklyRecords, by: \.recipientId)
+        let mostRecentIndexByRecipient = weeklyRecords.enumerated().reduce(into: [UUID: Int]()) { result, item in
+            if result[item.element.recipientId] == nil {
+                result[item.element.recipientId] = item.offset
+            }
+        }
+
+        let representativeId = groupedRecords
+            .map { (recipientId: $0.key, count: $0.value.count) }
+            .sorted {
+                if $0.count == $1.count {
+                    return (mostRecentIndexByRecipient[$0.recipientId] ?? Int.max)
+                        < (mostRecentIndexByRecipient[$1.recipientId] ?? Int.max)
+                }
+                return $0.count > $1.count
+            }
+            .first?
+            .recipientId
+
+        guard let representativeId else { return nil }
+        return recipients.first { $0.id == representativeId }
+    }
+
     private let feedItems = [
         HomeInfoFeedItem(
             title: "A/B/C 관찰기록 알아보기",
@@ -124,7 +150,7 @@ struct HomeView: View {
                 }
             }
 
-            HStack(alignment: .top) {
+            HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("\(selectedRecipientName)맘")
                         .font(.system(size: 28, weight: .bold))
@@ -145,8 +171,7 @@ struct HomeView: View {
                 Image("AICOcomponent")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 110, height: 110)
-                    .padding(.top, -4)
+                    .frame(width: 112, height: 112)
             }
         }
         .padding(.horizontal, 24)
@@ -178,7 +203,8 @@ struct HomeView: View {
                             } label: {
                                 RecentRecordPreviewCard(
                                     record: record,
-                                    recipientName: recipientName(for: record)
+                                    recipient: recipient(for: record),
+                                    fallbackRecipientName: selectedRecipientName
                                 )
                             }
                             .buttonStyle(.plain)
@@ -199,7 +225,7 @@ struct HomeView: View {
 
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
-                    TotalRecordCard(count: weeklyRecordCount, recipients: recipients)
+                    TotalRecordCard(count: weeklyRecordCount, recipient: weeklyRepresentativeRecipient)
                     SatisfactionCard(score: weeklySatisfactionScore)
                 }
 
@@ -251,7 +277,11 @@ struct HomeView: View {
     }
 
     private func recipientName(for record: RecordEntry) -> String {
-        recipients.first { $0.id == record.recipientId }?.nickname ?? selectedRecipientName
+        recipient(for: record)?.nickname ?? selectedRecipientName
+    }
+
+    private func recipient(for record: RecordEntry) -> RecipientProfile? {
+        recipients.first { $0.id == record.recipientId }
     }
 
     private func topItems(in names: [String]) -> [String] {
@@ -289,17 +319,14 @@ private struct HomeSectionHeader: View {
 
 private struct RecentRecordPreviewCard: View {
     let record: RecordEntry
-    let recipientName: String
+    let recipient: RecipientProfile?
+    let fallbackRecipientName: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 8) {
-                    Image("AICOLogo")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 36, height: 36)
-                        .clipShape(Circle())
+                    HomeRecipientAvatar(fileName: recipient?.profileImageName, size: 36)
 
                     Text(recipientName)
                         .font(.system(size: 16, weight: .semibold))
@@ -321,10 +348,9 @@ private struct RecentRecordPreviewCard: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 12) {
-                CategoryPair(stage: "A", text: firstCategory(record.antecedentCategories, fallback: "상황 기록"))
-                CategoryPair(stage: "C", text: firstCategory(record.consequenceCategories, fallback: "대응 기록"))
-            }
+            categoryArea
+
+            Spacer(minLength: 0)
 
             Text(noteText)
                 .font(.system(size: 16, weight: .medium))
@@ -332,9 +358,13 @@ private struct RecentRecordPreviewCard: View {
                 .lineLimit(1)
         }
         .padding(16)
-        .frame(width: 206, height: 282, alignment: .topLeading)
+        .frame(width: 206, height: 312, alignment: .topLeading)
         .background(.white, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: .black.opacity(0.05), radius: 12, x: 0, y: 0)
+    }
+
+    private var recipientName: String {
+        recipient?.nickname ?? fallbackRecipientName
     }
 
     private var mainBehavior: String {
@@ -348,8 +378,48 @@ private struct RecentRecordPreviewCard: View {
         return note
     }
 
-    private func firstCategory(_ categories: [String], fallback: String) -> String {
-        categories.first ?? fallback
+    private var categoryArea: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(categoryRows, id: \.stage) { row in
+                CategoryPair(stage: row.stage, text: row.text)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .frame(height: 106, alignment: .topLeading)
+    }
+
+    private var categoryRows: [(stage: String, text: String)] {
+        [
+            ("A", record.antecedentCategories.first),
+            ("B", record.behaviorCategories.first),
+            ("C", record.consequenceCategories.first)
+        ]
+        .compactMap { row in
+            guard let text = row.1, !text.isEmpty else { return nil }
+            return (row.0, text)
+        }
+    }
+}
+
+private struct HomeRecipientAvatar: View {
+    let fileName: String?
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if let image = ImageStorageService.image(for: fileName) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Image("AICOLogo")
+                    .resizable()
+                    .scaledToFill()
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
     }
 }
 
@@ -369,6 +439,7 @@ private struct CategoryPair: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(AICOTheme.primaryOrange)
                 .lineLimit(1)
+                .truncationMode(.tail)
                 .padding(.horizontal, 10)
                 .frame(height: 30)
                 .background(AICOTheme.primaryOrange.opacity(0.1), in: Capsule())
@@ -378,7 +449,7 @@ private struct CategoryPair: View {
 
 private struct TotalRecordCard: View {
     let count: Int
-    let recipients: [RecipientProfile]
+    let recipient: RecipientProfile?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -389,18 +460,10 @@ private struct TotalRecordCard: View {
 
                 Spacer()
 
-                HStack(spacing: -8) {
-                    ForEach(Array(recipients.prefix(2).enumerated()), id: \.offset) { _ in
-                        Image("AICOLogo")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 30, height: 30)
-                            .clipShape(Circle())
-                            .overlay {
-                                Circle().stroke(.white, lineWidth: 1)
-                            }
+                HomeRecipientAvatar(fileName: recipient?.profileImageName, size: 30)
+                    .overlay {
+                        Circle().stroke(.white, lineWidth: 1)
                     }
-                }
             }
 
             Spacer()
