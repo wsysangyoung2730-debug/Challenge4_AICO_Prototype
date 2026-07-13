@@ -7,6 +7,7 @@ struct HomeView: View {
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
 
     @State private var selectedInfoItem: HomeInfoFeedItem?
+    @State private var badgeReplayTrigger = 0
 
     private var recentRecords: [RecordEntry] {
         Array(records.prefix(5))
@@ -109,20 +110,27 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 24) {
             HStack(alignment: .center, spacing: 14) {
                 HStack(spacing: 10) {
-                    Image("AICOStar")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 36, height: 36)
+                    Button {
+                        badgeReplayTrigger += 1
+                    } label: {
+                        Image("AICOStar")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 36, height: 36)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("주간 기록 배지 애니메이션 다시 보기")
 
                     HomeWeeklyBadgeText(
                         weeklyCount: weeklyRecordCount,
                         monthlyCount: monthlyRecordCount,
-                        hasPlayedAnimation: sessionState.hasPlayedHomeBadgeAnimationThisSession
+                        hasPlayedAnimation: sessionState.hasPlayedHomeBadgeAnimationThisSession,
+                        replayTrigger: badgeReplayTrigger
                     ) {
                         sessionState.hasPlayedHomeBadgeAnimationThisSession = true
                     }
                 }
-                .frame(height: 48, alignment: .center)
+                .frame(height: 58, alignment: .center)
 
                 Spacer()
 
@@ -306,6 +314,7 @@ private struct HomeWeeklyBadgeText: View {
     let weeklyCount: Int
     let monthlyCount: Int
     let hasPlayedAnimation: Bool
+    let replayTrigger: Int
     let markAnimationPlayed: () -> Void
 
     private let characterTypingDelay: UInt64 = 42_000_000
@@ -319,11 +328,13 @@ private struct HomeWeeklyBadgeText: View {
         weeklyCount: Int,
         monthlyCount: Int,
         hasPlayedAnimation: Bool,
+        replayTrigger: Int,
         markAnimationPlayed: @escaping () -> Void
     ) {
         self.weeklyCount = weeklyCount
         self.monthlyCount = monthlyCount
         self.hasPlayedAnimation = hasPlayedAnimation
+        self.replayTrigger = replayTrigger
         self.markAnimationPlayed = markAnimationPlayed
 
         let finalMessage = BadgeMessage.weekly(count: weeklyCount)
@@ -334,8 +345,10 @@ private struct HomeWeeklyBadgeText: View {
     var body: some View {
         renderedText
             .font(.system(size: 14, weight: .semibold))
-            .lineLimit(1)
-            .fixedSize(horizontal: true, vertical: false)
+            .lineLimit(2)
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: 168, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(.white, in: Capsule())
@@ -354,6 +367,9 @@ private struct HomeWeeklyBadgeText: View {
             .onChange(of: weeklyCount) { _, _ in
                 guard hasPlayedAnimation || typingTask == nil else { return }
                 setFinalMessage()
+            }
+            .onChange(of: replayTrigger) { _, _ in
+                startTypingAnimation()
             }
     }
 
