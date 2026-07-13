@@ -12,6 +12,7 @@ struct ABCRecordingFlowView: View {
     let prefilledAttachmentID: String?
 
     @State private var currentRecipientID: UUID
+    @State private var selectedDate = Date()
     @State private var stepIndex = 0
     @State private var selectedAntecedents: Set<String> = []
     @State private var selectedBehaviors: Set<String> = []
@@ -25,6 +26,7 @@ struct ABCRecordingFlowView: View {
     @State private var validationMessage: String?
     @State private var recipientSwitchMessage: String?
     @State private var showsRecipientSelector = false
+    @State private var showsDatePicker = false
     @State private var showsExitAlert = false
     @State private var showsRecipientSwitchAlert = false
     @State private var didLoadPrefilledAttachment = false
@@ -51,17 +53,17 @@ struct ABCRecordingFlowView: View {
             } else {
                 ZStack {
                     VStack(spacing: 0) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            profileSwitcher
+                        VStack(alignment: .leading, spacing: 28) {
                             progressBar
+                            recordControls
                         }
-                        .padding(.horizontal, AICOTheme.screenPadding)
-                        .padding(.top, 8)
-                        .padding(.bottom, 10)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 20)
+                        .padding(.bottom, 28)
 
                         ScrollView {
                             currentStepContent
-                                .padding(.horizontal, AICOTheme.screenPadding)
+                                .padding(.horizontal, 24)
                                 .padding(.bottom, 16)
                         }
 
@@ -75,25 +77,16 @@ struct ABCRecordingFlowView: View {
             }
         }
         .background(AICOTheme.softBackground)
-        .navigationTitle("기록하기")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(savedRecord == nil)
-        .toolbar {
-            if savedRecord == nil {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        showsExitAlert = true
-                    } label: {
-                        Label("뒤로", systemImage: "chevron.left")
-                    }
-                }
-            }
-        }
         .onChange(of: selectedAttachmentItem) {
             Task { await saveSelectedAttachment() }
         }
         .task {
             loadPrefilledAttachmentIfNeeded()
+        }
+        .sheet(isPresented: $showsDatePicker) {
+            datePickerSheet
         }
         .alert("기록을 중단할까요?", isPresented: $showsExitAlert) {
             Button("계속 작성하기", role: .cancel) {}
@@ -137,35 +130,93 @@ struct ABCRecordingFlowView: View {
         recipients.first { $0.id == currentRecipientID } ?? recipients[0]
     }
 
+    private var recordControls: some View {
+        HStack(spacing: 12) {
+            dateSelector
+            profileSwitcher
+        }
+    }
+
+    private var dateSelector: some View {
+        Group {
+            if canChangeDate {
+                Button {
+                    showsDatePicker = true
+                } label: {
+                    dateSelectorContent(showsChevron: true)
+                }
+                .buttonStyle(.plain)
+            } else {
+                dateSelectorContent(showsChevron: false)
+            }
+        }
+    }
+
+    private func dateSelectorContent(showsChevron: Bool) -> some View {
+        HStack(spacing: 10) {
+            Text(selectedDate.formatted(.dateTime.year().month().day()))
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+
+            Spacer(minLength: 4)
+
+            if showsChevron {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 68)
+        .background(AICOTheme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 6)
+    }
+
+    private var datePickerSheet: some View {
+        NavigationStack {
+            DatePicker("기록 날짜", selection: $selectedDate, displayedComponents: .date)
+                .datePickerStyle(.graphical)
+                .padding()
+                .navigationTitle("날짜 선택")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("완료") {
+                            showsDatePicker = false
+                        }
+                    }
+                }
+        }
+        .presentationDetents([.medium])
+    }
+
     private var profileSwitcher: some View {
         Button {
             handleRecipientSwitcherTap()
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 recipientAvatar
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("기록 대상")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                Text(currentRecipient.nickname)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
 
-                    Text(currentRecipient.nickname)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                }
+                Spacer(minLength: 4)
 
-                Spacer()
-
-                Image(systemName: recipients.count > 1 ? "chevron.down.circle.fill" : "person.crop.circle")
-                    .foregroundStyle(AICOTheme.primaryOrange)
+                Image(systemName: recipients.count > 1 ? "chevron.down" : "person.crop.circle")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.secondary)
             }
-            .padding(12)
+            .padding(.horizontal, 16)
+            .frame(height: 68)
             .background(AICOTheme.cardBackground)
-            .overlay {
-                RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
-                    .stroke(AICOTheme.primaryOrange.opacity(0.18), lineWidth: 1)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 6)
         }
         .buttonStyle(.plain)
     }
@@ -246,7 +297,7 @@ struct ABCRecordingFlowView: View {
                     .background(AICOTheme.softOrangeBackground)
             }
         }
-        .frame(width: 48, height: 48)
+        .frame(width: 40, height: 40)
         .clipShape(Circle())
     }
 
@@ -269,21 +320,39 @@ struct ABCRecordingFlowView: View {
     }
 
     private var progressBar: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                ForEach(steps.indices, id: \.self) { index in
-                    Capsule()
-                        .fill(index <= stepIndex ? AICOTheme.primaryOrange : Color.secondary.opacity(0.18))
-                        .frame(height: 6)
+        HStack(spacing: 0) {
+            ForEach(steps.indices, id: \.self) { index in
+                progressNode(for: index)
+
+                if index < steps.count - 1 {
+                    Rectangle()
+                        .fill(index < stepIndex ? AICOTheme.primaryOrange : AICOTheme.primaryOrange.opacity(0.14))
+                        .frame(height: 4)
+                        .frame(maxWidth: .infinity)
                 }
             }
-
-            Text(steps[stepIndex].progressLabel)
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundStyle(AICOTheme.primaryOrange)
         }
-        .contentShape(Rectangle())
+        .frame(height: 32)
+    }
+
+    @ViewBuilder
+    private func progressNode(for index: Int) -> some View {
+        let isActive = index <= stepIndex
+        let label = steps[index].progressLabel
+
+        if label.isEmpty {
+            Image(systemName: "seal.fill")
+                .font(.system(size: 31))
+                .foregroundStyle(isActive ? AICOTheme.primaryOrange : AICOTheme.primaryOrange.opacity(0.14))
+                .frame(width: 32, height: 32)
+        } else {
+            Text(label)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 30, height: 30)
+                .background(isActive ? AICOTheme.primaryOrange : AICOTheme.primaryOrange.opacity(0.22))
+                .clipShape(Circle())
+        }
     }
 
     @ViewBuilder
@@ -292,8 +361,8 @@ struct ABCRecordingFlowView: View {
         case .antecedent:
             CategorySelectionStepView(
                 stage: .antecedent,
-                title: "[A단계] 어떤 상황이었나요?",
-                helperText: "행동이 나타나기 전의 장소, 활동, 주변 환경을 선택해요.",
+                title: "[A] 선행 상황",
+                helperText: "행동이 일어나기 직전 무슨 일이 있었나요?",
                 categories: categories(for: .antecedent),
                 selectedNames: $selectedAntecedents,
                 onAddCategory: { categoryInputStage = .antecedent }
@@ -301,8 +370,8 @@ struct ABCRecordingFlowView: View {
         case .behavior:
             CategorySelectionStepView(
                 stage: .behavior,
-                title: "[B단계] 어떤 행동이 있었나요?",
-                helperText: "관찰된 행동이나 신호를 있는 그대로 선택해요.",
+                title: "[B] 행동 관찰",
+                helperText: "어떤 행동을 보였나요?",
                 categories: categories(for: .behavior),
                 selectedNames: $selectedBehaviors,
                 onAddCategory: { categoryInputStage = .behavior }
@@ -310,8 +379,8 @@ struct ABCRecordingFlowView: View {
         case .consequence:
             CategorySelectionStepView(
                 stage: .consequence,
-                title: "[C단계] 어떻게 대응했고 결과는 어땠나요?",
-                helperText: "보호자의 대응과 이후 변화를 함께 선택해요.",
+                title: "[C] 대응 및 결과",
+                helperText: "행동 이후 무슨 일이 있었나요?",
                 categories: categories(for: .consequence),
                 selectedNames: $selectedConsequences,
                 onAddCategory: { categoryInputStage = .consequence }
@@ -388,27 +457,43 @@ struct ABCRecordingFlowView: View {
 
     private var bottomActionArea: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(validationMessage ?? bottomHelperText)
-                .font(.footnote)
-                .fontWeight(validationMessage == nil ? .regular : .semibold)
-                .foregroundStyle(validationMessage == nil ? Color.secondary : Color.red)
+            if let validationMessage {
+                Text(validationMessage)
+                    .font(.footnote)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.red)
+                    .padding(.horizontal, 24)
+            }
 
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Button {
+                    showsExitAlert = true
+                } label: {
+                    Image(systemName: "house")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(.black)
+                        .frame(width: 56, height: 56)
+                        .background(AICOTheme.cardBackground)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(.white.opacity(0.8), lineWidth: 1)
+                        }
+                        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
+                }
+                .buttonStyle(.plain)
+
                 Button {
                     validationMessage = nil
                     stepIndex = max(stepIndex - 1, 0)
                 } label: {
-                    Text("이전")
-                        .fontWeight(.semibold)
+                    Text("이전으로")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(stepIndex == 0 ? Color.secondary : AICOTheme.primaryOrange)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(AICOTheme.softOrangeBackground.opacity(stepIndex == 0 ? 0.45 : 1))
-                        .foregroundStyle(stepIndex == 0 ? .secondary : AICOTheme.primaryOrange)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
-                                .stroke(AICOTheme.primaryOrange.opacity(stepIndex == 0 ? 0.12 : 0.35), lineWidth: 1)
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+                        .frame(height: 56)
+                        .background(stepIndex == 0 ? Color.white.opacity(0.55) : AICOTheme.primaryOrange.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
                 .buttonStyle(.plain)
                 .disabled(stepIndex == 0)
@@ -416,30 +501,21 @@ struct ABCRecordingFlowView: View {
                 Button {
                     moveForward()
                 } label: {
-                    Text(stepIndex == steps.count - 1 ? "저장하기" : "다음")
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(AICOTheme.primaryOrange)
+                    Text(stepIndex == steps.count - 1 ? "저장하기" : "다음으로")
+                        .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(AICOTheme.primaryOrange)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
                 .buttonStyle(.plain)
             }
+            .padding(.horizontal, 24)
         }
-        .padding(.horizontal, AICOTheme.screenPadding)
-        .padding(.top, 12)
-        .padding(.bottom, 14)
-        .background(.regularMaterial)
-    }
-
-    private var bottomHelperText: String {
-        switch steps[stepIndex] {
-        case .antecedent, .behavior, .consequence:
-            "여러 항목을 선택할 수 있어요"
-        case .note:
-            "메모와 사진은 선택 사항이에요"
-        }
+        .padding(.top, 8)
+        .padding(.bottom, 18)
+        .background(AICOTheme.softBackground)
     }
 
     private var categoryInputBinding: Binding<Bool> {
@@ -463,6 +539,10 @@ struct ABCRecordingFlowView: View {
                 }
             }
         )
+    }
+
+    private var canChangeDate: Bool {
+        steps[stepIndex] == .antecedent && savedRecord == nil
     }
 
     private var canSwitchRecipient: Bool {
@@ -574,6 +654,7 @@ struct ABCRecordingFlowView: View {
         let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
         let record = RecordEntry(
             recipientId: currentRecipient.id,
+            createdAt: selectedDate,
             antecedentCategories: Array(selectedAntecedents).sorted(),
             behaviorCategories: Array(selectedBehaviors).sorted(),
             consequenceCategories: Array(selectedConsequences).sorted(),
@@ -653,13 +734,13 @@ private enum RecordingStep: CaseIterable {
     var progressLabel: String {
         switch self {
         case .antecedent:
-            "[A단계]"
+            "A"
         case .behavior:
-            "[B단계]"
+            "B"
         case .consequence:
-            "[C단계]"
+            "C"
         case .note:
-            "마무리"
+            ""
         }
     }
 }
