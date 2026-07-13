@@ -308,6 +308,9 @@ private struct HomeWeeklyBadgeText: View {
     let hasPlayedAnimation: Bool
     let markAnimationPlayed: () -> Void
 
+    private let characterTypingDelay: UInt64 = 42_000_000
+    private let completedMessagePause: UInt64 = 950_000_000
+
     @State private var currentMessage: BadgeMessage
     @State private var typedCount: Int
     @State private var typingTask: Task<Void, Never>?
@@ -332,7 +335,7 @@ private struct HomeWeeklyBadgeText: View {
         renderedText
             .font(.system(size: 14, weight: .semibold))
             .lineLimit(1)
-            .frame(minWidth: 156, alignment: .leading)
+            .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(.white, in: Capsule())
@@ -409,10 +412,10 @@ private struct HomeWeeklyBadgeText: View {
                     await MainActor.run {
                         typedCount = count
                     }
-                    try? await Task.sleep(nanoseconds: 42_000_000)
+                    try? await Task.sleep(nanoseconds: characterTypingDelay)
                 }
 
-                try? await Task.sleep(nanoseconds: 650_000_000)
+                try? await Task.sleep(nanoseconds: completedMessagePause)
             }
 
             await MainActor.run {
