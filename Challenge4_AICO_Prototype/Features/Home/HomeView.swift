@@ -402,10 +402,26 @@ private struct HomeWeeklyBadgeText: View {
 
         typingTask = Task {
             let encouragements = [
+                BadgeMessage.plain("오늘도 충분해요"),
+                BadgeMessage.plain("잘 따라가고 있어요"),
+                BadgeMessage.plain("천천히 봐도 괜찮아요"),
+                BadgeMessage.plain("기록이 쌓이고 있어요"),
+                BadgeMessage.plain("오늘도 잘하고 있어요"),
+                BadgeMessage.plain("작은 변화도 소중해요"),
+                BadgeMessage.plain("차분히 살펴봐요"),
+                BadgeMessage.plain("좋은 흐름이에요"),
+                BadgeMessage.plain("함께 확인해봐요"),
+                BadgeMessage.plain("오늘의 순간을 남겨요"),
+                BadgeMessage.plain("놓치지 않고 보고 있어요"),
+                BadgeMessage.plain("기록은 힘이 돼요"),
+                BadgeMessage.plain("괜찮아요, 천천히"),
+                BadgeMessage.plain("조금씩 알아가요"),
+                BadgeMessage.plain("잘하고 있어요"),
+                BadgeMessage.plain("오늘도 함께해요"),
                 BadgeMessage.plain("오늘도 천천히\n살펴봐요"),
                 BadgeMessage.plain("작은 기록이\n큰 도움이 돼요"),
-                BadgeMessage.plain("잘하고 있어요"),
-                BadgeMessage.plain("차근차근\n확인해봐요")
+                BadgeMessage.plain("차근차근\n확인해봐요"),
+                BadgeMessage.plain("우리의 하루를\n가볍게 돌아봐요")
             ].shuffled().prefix(2)
 
             let messages = [
