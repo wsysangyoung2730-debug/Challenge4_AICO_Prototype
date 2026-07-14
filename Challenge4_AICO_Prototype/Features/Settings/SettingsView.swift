@@ -27,6 +27,12 @@ struct SettingsView: View {
                 } label: {
                     SettingsRow(title: "기록 카테고리 관리", systemImage: "tag.fill")
                 }
+
+                NavigationLink {
+                    CaregiverSharingSettingsView()
+                } label: {
+                    SettingsRow(title: "보호자 공유 설정", systemImage: "person.2.fill")
+                }
             }
 
             Section("알림 설정") {

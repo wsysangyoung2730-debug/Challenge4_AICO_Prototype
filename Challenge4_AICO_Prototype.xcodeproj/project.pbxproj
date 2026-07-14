@@ -23,6 +23,7 @@
 		10000000000000000000000E /* ArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000010E /* ArchiveView.swift */; };
 		10000000000000000000000F /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000010F /* ReportView.swift */; };
 		100000000000000000000010 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000110 /* SettingsView.swift */; };
+		1000000000000000000000BA /* CaregiverSharingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000135 /* CaregiverSharingSettingsView.swift */; };
 		100000000000000000000011 /* PlaceholderCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000111 /* PlaceholderCardView.swift */; };
 		100000000000000000000012 /* AICOTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000112 /* AICOTheme.swift */; };
 		100000000000000000000013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000113 /* Assets.xcassets */; };
@@ -112,6 +113,7 @@
 		10000000000000000000010E /* ArchiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveView.swift; sourceTree = "<group>"; };
 		10000000000000000000010F /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
 		100000000000000000000110 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		100000000000000000000135 /* CaregiverSharingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaregiverSharingSettingsView.swift; sourceTree = "<group>"; };
 		100000000000000000000111 /* PlaceholderCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderCardView.swift; sourceTree = "<group>"; };
 		100000000000000000000112 /* AICOTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICOTheme.swift; sourceTree = "<group>"; };
 		100000000000000000000113 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -398,6 +400,7 @@
 			isa = PBXGroup;
 			children = (
 				100000000000000000000110 /* SettingsView.swift */,
+				100000000000000000000135 /* CaregiverSharingSettingsView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -605,6 +608,7 @@
 				100000000000000000000027 /* QuickRecordRecipientPickerView.swift in Sources */,
 				10000000000000000000000F /* ReportView.swift in Sources */,
 				100000000000000000000010 /* SettingsView.swift in Sources */,
+				1000000000000000000000BA /* CaregiverSharingSettingsView.swift in Sources */,
 				100000000000000000000011 /* PlaceholderCardView.swift in Sources */,
 				100000000000000000000012 /* AICOTheme.swift in Sources */,
 			);

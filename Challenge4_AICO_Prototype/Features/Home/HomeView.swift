@@ -11,6 +11,7 @@ struct HomeView: View {
     @State private var isHeroGreetingVisible = false
     @State private var isHeroCharacterVisible = false
     @State private var isHeroCharacterFloating = false
+    @State private var showsSyncPrototypeAlert = false
 
     private var recentRecords: [RecordEntry] {
         Array(records.prefix(5))
@@ -106,6 +107,11 @@ struct HomeView: View {
         .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $selectedInfoItem) { item in
             HomeInfoFeedDetailView(item: item)
+        }
+        .alert("동기화 준비 중이에요", isPresented: $showsSyncPrototypeAlert) {
+            Button("확인", role: .cancel) {}
+        } message: {
+            Text("보호자 공유 설정에서 연결 후 사용할 수 있어요.")
         }
     }
 
@@ -245,10 +251,32 @@ struct HomeView: View {
 
     private var recentRecordsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HomeSectionHeader(
-                title: "최근 기록",
-                subtitle: "최근 5개 기록을 빠르게 확인해보세요"
-            )
+            HStack(alignment: .top, spacing: 12) {
+                HomeSectionHeader(
+                    title: "최근 기록",
+                    subtitle: "최근 5개 기록을 빠르게 확인해보세요"
+                )
+
+                Spacer(minLength: 8)
+
+                Button {
+                    showsSyncPrototypeAlert = true
+                } label: {
+                    Label("동기화", systemImage: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AICOTheme.primaryOrange)
+                        .padding(.horizontal, 12)
+                        .frame(height: 34)
+                        .background(.white, in: Capsule())
+                        .overlay {
+                            Capsule().stroke(AICOTheme.primaryOrange.opacity(0.18), lineWidth: 1)
+                        }
+                        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("보호자 공유 동기화")
+                .padding(.trailing, 24)
+            }
 
             if recentRecords.isEmpty {
                 HomeEmptyCard(
