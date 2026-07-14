@@ -62,6 +62,23 @@
 		1000000000000000000000B9 /* AICOShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 10000000000000000000012D /* AICOShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		1000000000000000000000A0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 100000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 100000000000000000000061;
+			remoteInfo = AICOWidgetExtension;
+		};
+		1000000000000000000000C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 100000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 100000000000000000000062;
+			remoteInfo = AICOShareExtension;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXCopyFilesBuildPhase section */
 		100000000000000000000081 /* Embed App Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -79,8 +96,6 @@
 
 /* Begin PBXFileReference section */
 		100000000000000000000020 /* Challenge4_AICO_Prototype.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Challenge4_AICO_Prototype.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		100000000000000000000124 /* AICOWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AICOWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		10000000000000000000012D /* AICOShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AICOShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		100000000000000000000101 /* AICOPrototypeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICOPrototypeApp.swift; sourceTree = "<group>"; };
 		100000000000000000000102 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
 		100000000000000000000103 /* RecipientProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipientProfile.swift; sourceTree = "<group>"; };
@@ -116,6 +131,7 @@
 		100000000000000000000121 /* AICODeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICODeepLink.swift; sourceTree = "<group>"; };
 		100000000000000000000122 /* AICODeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICODeepLinkRouter.swift; sourceTree = "<group>"; };
 		100000000000000000000123 /* QuickRecordRecipientPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickRecordRecipientPickerView.swift; sourceTree = "<group>"; };
+		100000000000000000000124 /* AICOWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AICOWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		100000000000000000000125 /* AICOWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICOWidgetBundle.swift; sourceTree = "<group>"; };
 		100000000000000000000126 /* QuickRecordWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickRecordWidget.swift; sourceTree = "<group>"; };
 		100000000000000000000127 /* AICOWidgetProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICOWidgetProvider.swift; sourceTree = "<group>"; };
@@ -124,6 +140,7 @@
 		10000000000000000000012A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		10000000000000000000012B /* AICOWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AICOWidgetExtension.entitlements; sourceTree = "<group>"; };
 		10000000000000000000012C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		10000000000000000000012D /* AICOShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AICOShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		10000000000000000000012E /* AICOAppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICOAppGroup.swift; sourceTree = "<group>"; };
 		10000000000000000000012F /* SharedPhotoAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedPhotoAttachment.swift; sourceTree = "<group>"; };
 		100000000000000000000130 /* SharedPhotoAttachmentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedPhotoAttachmentStore.swift; sourceTree = "<group>"; };
@@ -289,23 +306,6 @@
 			path = Utilities;
 			sourceTree = "<group>";
 		};
-		100000000000000000000218 /* Shared */ = {
-			isa = PBXGroup;
-			children = (
-				10000000000000000000012E /* AICOAppGroup.swift */,
-			);
-			path = Shared;
-			sourceTree = "<group>";
-		};
-		100000000000000000000219 /* Share */ = {
-			isa = PBXGroup;
-			children = (
-				10000000000000000000012F /* SharedPhotoAttachment.swift */,
-				100000000000000000000130 /* SharedPhotoAttachmentStore.swift */,
-			);
-			path = Share;
-			sourceTree = "<group>";
-		};
 		100000000000000000000216 /* Widget */ = {
 			isa = PBXGroup;
 			children = (
@@ -324,6 +324,23 @@
 				100000000000000000000122 /* AICODeepLinkRouter.swift */,
 			);
 			path = DeepLink;
+			sourceTree = "<group>";
+		};
+		100000000000000000000218 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				10000000000000000000012E /* AICOAppGroup.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		100000000000000000000219 /* Share */ = {
+			isa = PBXGroup;
+			children = (
+				10000000000000000000012F /* SharedPhotoAttachment.swift */,
+				100000000000000000000130 /* SharedPhotoAttachmentStore.swift */,
+			);
+			path = Share;
 			sourceTree = "<group>";
 		};
 		100000000000000000000221 /* Onboarding */ = {
@@ -426,23 +443,6 @@
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
-
-/* Begin PBXContainerItemProxy section */
-		1000000000000000000000A0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 100000000000000000000000 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 100000000000000000000061;
-			remoteInfo = AICOWidgetExtension;
-		};
-		1000000000000000000000C3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 100000000000000000000000 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 100000000000000000000062;
-			remoteInfo = AICOShareExtension;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXNativeTarget section */
 		100000000000000000000060 /* Challenge4_AICO_Prototype */ = {
@@ -757,56 +757,6 @@
 			};
 			name = Release;
 		};
-		10000000000000000000009A /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = AICOShareExtension/AICOShareExtension.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 36545XSWN8;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = AICOShareExtension/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.aico.prototype.challenge4.AICOShareExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		10000000000000000000009B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = AICOShareExtension/AICOShareExtension.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 36545XSWN8;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = AICOShareExtension/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.aico.prototype.challenge4.AICOShareExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 		100000000000000000000096 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -921,6 +871,56 @@
 			};
 			name = Release;
 		};
+		10000000000000000000009A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = AICOShareExtension/AICOShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 36545XSWN8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AICOShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aico.prototype.challenge4.AICOShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		10000000000000000000009B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = AICOShareExtension/AICOShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 36545XSWN8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AICOShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aico.prototype.challenge4.AICOShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -929,6 +929,15 @@
 			buildConfigurations = (
 				100000000000000000000091 /* Debug */,
 				100000000000000000000092 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		100000000000000000000095 /* Build configuration list for PBXProject "Challenge4_AICO_Prototype" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				100000000000000000000096 /* Debug */,
+				100000000000000000000097 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -947,15 +956,6 @@
 			buildConfigurations = (
 				10000000000000000000009A /* Debug */,
 				10000000000000000000009B /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		100000000000000000000095 /* Build configuration list for PBXProject "Challenge4_AICO_Prototype" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				100000000000000000000096 /* Debug */,
-				100000000000000000000097 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
