@@ -44,7 +44,7 @@ struct RecipientRegistrationView: View {
 
             Text("기록이 누구의 순간인지 구분할 수 있도록 이름이나 별명을 먼저 등록해요. 나머지 정보는 선택 사항입니다.")
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AICOTheme.textGray)
         }
     }
 
@@ -121,7 +121,7 @@ struct RecipientRegistrationView: View {
 
                 Text("선택한 이미지는 앱 내부 로컬 저장소에만 보관됩니다.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
             }
         }
         .padding()

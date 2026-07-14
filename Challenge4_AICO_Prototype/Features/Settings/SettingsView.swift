@@ -36,7 +36,7 @@ struct SettingsView: View {
 
                 Text("프로토타입에서는 앱 내부 설정값만 저장됩니다.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
             }
 
             Section("데이터") {
@@ -148,7 +148,7 @@ private struct RecipientManagementView: View {
             Section("등록된 대상자") {
                 if recipients.isEmpty {
                     Text("등록된 대상자가 아직 없어요.")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AICOTheme.textGray)
                 } else {
                     ForEach(recipients) { recipient in
                         NavigationLink {
@@ -163,13 +163,13 @@ private struct RecipientManagementView: View {
 
                                     Text(detailText(for: recipient))
                                         .font(.subheadline)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(AICOTheme.textGray)
                                         .lineLimit(2)
 
                                     if records.contains(where: { $0.recipientId == recipient.id }) {
                                         Text("연결된 기록이 있어 삭제 시 기록에는 '등록된 대상자'로 표시될 수 있어요.")
                                             .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(AICOTheme.textGray)
                                     }
                                 }
                             }
@@ -422,7 +422,7 @@ private struct CategoryManagementView: View {
 
                     if stageCategories.isEmpty {
                         Text("아직 카테고리가 없어요. 기록 화면에 들어가면 기본 카테고리가 준비됩니다.")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AICOTheme.textGray)
                     } else {
                         ForEach(stageCategories) { category in
                             if category.isCustom {
@@ -458,7 +458,7 @@ private struct CategoryManagementView: View {
             Spacer()
             Text(category.isCustom ? "커스텀" : "기본")
                 .font(.caption)
-                .foregroundStyle(category.isCustom ? AICOTheme.primaryOrange : .secondary)
+                .foregroundStyle(category.isCustom ? AICOTheme.primaryOrange : AICOTheme.textGray)
         }
     }
 

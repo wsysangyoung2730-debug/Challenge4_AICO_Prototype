@@ -253,7 +253,7 @@ struct ABCRecordingFlowView: View {
                                 } else {
                                     Text("이 대상자로 기록하기")
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(AICOTheme.textGray)
                                 }
                             }
 
@@ -399,7 +399,7 @@ struct ABCRecordingFlowView: View {
 
                 Text("자유롭게 메모를 남기고 필요한 사진을 첨부할 수 있어요.")
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
             }
 
             TextField("예: 5분 정도 기다린 뒤 좋아하는 장난감을 보여주자 안정되었어요.", text: $note, axis: .vertical)
@@ -419,7 +419,7 @@ struct ABCRecordingFlowView: View {
 
                         Text("선택한 이미지는 앱 내부 로컬 저장소에만 보관됩니다.")
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AICOTheme.textGray)
                     }
 
                     Spacer()

@@ -17,7 +17,7 @@ struct HomeInfoFeedDetailView: View {
 
                     Text(item.detail)
                         .font(.body)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AICOTheme.textGray)
                 }
                 .padding(AICOTheme.screenPadding)
             }

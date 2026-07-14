@@ -15,7 +15,7 @@ struct QuickRecordRecipientPickerView: View {
 
                         Text("기록을 시작하면 먼저 대상자 등록 화면으로 안내됩니다.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AICOTheme.textGray)
 
                         NavigationLink("대상자 등록으로 이동") {
                             RecordingEntryView()
@@ -37,7 +37,7 @@ struct QuickRecordRecipientPickerView: View {
 
                                     Text(todaySummary(for: recipient))
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(AICOTheme.textGray)
                                 }
                             }
                         }

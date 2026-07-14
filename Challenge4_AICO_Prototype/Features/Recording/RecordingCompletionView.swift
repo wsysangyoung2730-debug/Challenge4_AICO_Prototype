@@ -32,7 +32,7 @@ struct RecordingCompletionView: View {
 
                 Text("저장된 기록은 이후 아카이브와 리포트에서 다시 살펴볼 수 있도록 연결할 예정이에요.")
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
                     .multilineTextAlignment(.center)
             }
 
