@@ -17,7 +17,7 @@ struct ServiceIntroView: View {
 
                 Text("AICO는 보호자가 대상자의 상황, 행동, 대응을 가볍게 나누어 기록하고 다시 돌아볼 수 있도록 돕습니다.")
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
 
                 VStack(spacing: 12) {
                     IntroCard(
@@ -74,7 +74,7 @@ private struct IntroCard: View {
 
                 Text(text)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
             }
         }
         .padding()

@@ -18,7 +18,7 @@ struct PlaceholderCardView: View {
 
             Text(message)
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AICOTheme.textGray)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)

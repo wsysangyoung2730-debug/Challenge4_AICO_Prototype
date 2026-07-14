@@ -1,6 +1,11 @@
 import SwiftUI
+import SwiftData
 
 struct RecordDetailView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @State private var isShowingDeleteAlert = false
+
     let record: RecordEntry
     let recipientName: String
 
@@ -31,11 +36,21 @@ struct RecordDetailView: View {
                 if !record.attachmentNames.isEmpty {
                     attachmentSection
                 }
+
+                deleteButton
             }
             .padding(AICOTheme.screenPadding)
         }
         .navigationTitle("기록 상세")
         .background(AICOTheme.softBackground)
+        .alert("이 기록을 삭제할까요?", isPresented: $isShowingDeleteAlert) {
+            Button("취소", role: .cancel) { }
+            Button("삭제", role: .destructive) {
+                deleteRecord()
+            }
+        } message: {
+            Text("삭제하면 이 기록은 되돌릴 수 없어요.")
+        }
     }
 
     private var header: some View {
@@ -46,7 +61,7 @@ struct RecordDetailView: View {
 
             Text(record.createdAt.formatted(date: .complete, time: .shortened))
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AICOTheme.textGray)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -62,7 +77,7 @@ struct RecordDetailView: View {
             if categories.isEmpty {
                 Text("선택된 항목이 없어요.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
             } else {
                 FlowChipLayout(items: categories)
             }
@@ -80,7 +95,7 @@ struct RecordDetailView: View {
 
             Text(note)
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AICOTheme.textGray)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -119,6 +134,44 @@ struct RecordDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AICOTheme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+    }
+
+    private var deleteButton: some View {
+        Button {
+            isShowingDeleteAlert = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "trash")
+                    .font(.subheadline)
+
+                Text("이 기록 삭제하기")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+            }
+            .foregroundStyle(.red)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(Color.red.opacity(0.08))
+            .overlay {
+                RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
+                    .stroke(Color.red.opacity(0.22), lineWidth: 1)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 4)
+    }
+
+    private func deleteRecord() {
+        modelContext.delete(record)
+
+        do {
+            try modelContext.save()
+        } catch {
+            assertionFailure("Failed to delete record: \(error.localizedDescription)")
+        }
+
+        dismiss()
     }
 }
 

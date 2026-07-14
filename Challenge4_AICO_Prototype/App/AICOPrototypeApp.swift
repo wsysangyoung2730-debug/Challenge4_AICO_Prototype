@@ -16,19 +16,30 @@ struct AICOPrototypeApp: App {
 
 private struct RootView: View {
     @EnvironmentObject private var sessionState: AnonymousSessionState
+    @State private var pendingDeepLink: AICODeepLink?
 
     var body: some View {
-        if sessionState.hasSeenServiceIntro {
-            MainTabView()
-        } else {
-            ServiceIntroView {
+        Group {
+            if sessionState.hasSeenServiceIntro {
+                MainTabView(pendingDeepLink: $pendingDeepLink)
+            } else {
+                ServiceIntroView {
+                    sessionState.completeServiceIntro()
+                }
+            }
+        }
+        .onOpenURL { url in
+            guard let deepLink = AICODeepLinkRouter.parse(url) else { return }
+            if !sessionState.hasSeenServiceIntro {
                 sessionState.completeServiceIntro()
             }
+            pendingDeepLink = deepLink
         }
     }
 }
 
 private struct MainTabView: View {
+    @Binding var pendingDeepLink: AICODeepLink?
     @State private var selectedTab: MainNavigationTab = .home
     @State private var activeDeepLink: AICODeepLink?
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
@@ -36,54 +47,13 @@ private struct MainTabView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+            ZStack(alignment: .bottom) {
                 selectedView
-
-                Divider()
-
-                HStack(spacing: 16) {
-                    ForEach(MainNavigationTab.allCases) { tab in
-                        Button {
-                            selectedTab = tab
-                        } label: {
-                            VStack(spacing: 4) {
-                                Image(systemName: tab.systemImage)
-                                    .font(.title3)
-
-                                Text(tab.title)
-                                    .font(.caption)
-                                    .fontWeight(.semibold)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .foregroundStyle(selectedTab == tab ? AICOTheme.primaryOrange : .secondary)
-                        }
-                        .buttonStyle(.plain)
+                    .safeAreaInset(edge: .bottom) {
+                        Color.clear.frame(height: 104)
                     }
 
-                    NavigationLink {
-                        RecordingEntryView()
-                    } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: "plus")
-                                .font(.headline)
-                                .fontWeight(.bold)
-
-                            Text("기록")
-                                .font(.caption2)
-                                .fontWeight(.semibold)
-                        }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 13)
-                        .background(AICOTheme.primaryOrange)
-                        .clipShape(Capsule())
-                    }
-                    .accessibilityLabel("기록 시작")
-                }
-                .padding(.horizontal, 18)
-                .padding(.top, 12)
-                .padding(.bottom, 12)
-                .background(.regularMaterial)
+                FloatingBottomNavigationBar(selectedTab: $selectedTab)
             }
             .navigationDestination(item: $activeDeepLink) { deepLink in
                 switch deepLink {
@@ -91,14 +61,17 @@ private struct MainTabView: View {
                     RecordingEntryView(preferredRecipientID: recipientId)
                 case .selectRecipientForRecord:
                     QuickRecordRecipientPickerView()
+                case let .recordFromPhoto(attachmentId):
+                    RecordingEntryView(prefilledAttachmentID: attachmentId)
                 }
             }
         }
         .onAppear {
             updateWidgetSnapshot()
+            consumePendingDeepLink()
         }
-        .onOpenURL { url in
-            activeDeepLink = AICODeepLinkRouter.parse(url)
+        .onChange(of: pendingDeepLink) {
+            consumePendingDeepLink()
         }
     }
 
@@ -117,6 +90,74 @@ private struct MainTabView: View {
     private func updateWidgetSnapshot() {
         let snapshot = WidgetSnapshotBuilder.build(recipients: recipients, records: records)
         WidgetSnapshotStore.save(snapshot)
+    }
+
+    private func consumePendingDeepLink() {
+        guard let pendingDeepLink else { return }
+        activeDeepLink = pendingDeepLink
+        self.pendingDeepLink = nil
+    }
+}
+
+private struct FloatingBottomNavigationBar: View {
+    @Binding var selectedTab: MainNavigationTab
+
+    var body: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 4) {
+                ForEach(MainNavigationTab.allCases) { tab in
+                    Button {
+                        selectedTab = tab
+                    } label: {
+                        Image(systemName: tab.systemImage)
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(selectedTab == tab ? AICOTheme.primaryOrange : AICOTheme.darkGray)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background {
+                                if selectedTab == tab {
+                                    Capsule()
+                                        .fill(.ultraThinMaterial)
+                                        .overlay {
+                                            Capsule()
+                                                .fill(Color.white.opacity(0.36))
+                                        }
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(tab.title)
+                }
+            }
+            .padding(4)
+            .frame(maxWidth: .infinity)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(Color.white.opacity(0.55), lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(0.12), radius: 20, x: 0, y: 8)
+
+            NavigationLink {
+                RecordingEntryView()
+            } label: {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(AICOTheme.darkGray)
+                    .frame(width: 48, height: 48)
+                    .padding(4)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .stroke(Color.white.opacity(0.55), lineWidth: 1)
+                    }
+                    .shadow(color: .black.opacity(0.12), radius: 20, x: 0, y: 8)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("기록 시작")
+        }
+        .padding(.horizontal, 25)
+        .padding(.bottom, 16)
     }
 }
 
@@ -145,7 +186,7 @@ private enum MainNavigationTab: CaseIterable, Identifiable {
         case .archive:
             "archivebox.fill"
         case .report:
-            "chart.bar.xaxis"
+            "chart.pie.fill"
         }
     }
 }

@@ -9,6 +9,7 @@ struct ABCRecordingFlowView: View {
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
 
     let recipients: [RecipientProfile]
+    let prefilledAttachmentID: String?
 
     @State private var currentRecipientID: UUID
     @State private var stepIndex = 0
@@ -26,11 +27,18 @@ struct ABCRecordingFlowView: View {
     @State private var showsRecipientSelector = false
     @State private var showsExitAlert = false
     @State private var showsRecipientSwitchAlert = false
+    @State private var didLoadPrefilledAttachment = false
+    @State private var hasSharedPhotoAttachment = false
 
     private let steps = RecordingStep.allCases
 
-    init(recipients: [RecipientProfile], initialRecipient: RecipientProfile) {
+    init(
+        recipients: [RecipientProfile],
+        initialRecipient: RecipientProfile,
+        prefilledAttachmentID: String? = nil
+    ) {
         self.recipients = recipients
+        self.prefilledAttachmentID = prefilledAttachmentID
         _currentRecipientID = State(initialValue: initialRecipient.id)
     }
 
@@ -84,6 +92,9 @@ struct ABCRecordingFlowView: View {
         .onChange(of: selectedAttachmentItem) {
             Task { await saveSelectedAttachment() }
         }
+        .task {
+            loadPrefilledAttachmentIfNeeded()
+        }
         .alert("기록을 중단할까요?", isPresented: $showsExitAlert) {
             Button("계속 작성하기", role: .cancel) {}
             Button("나가기", role: .destructive) {
@@ -136,7 +147,7 @@ struct ABCRecordingFlowView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("기록 대상")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AICOTheme.textGray)
 
                     Text(currentRecipient.nickname)
                         .font(.headline)
@@ -191,7 +202,7 @@ struct ABCRecordingFlowView: View {
                                 } else {
                                     Text("이 대상자로 기록하기")
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(AICOTheme.textGray)
                                 }
                             }
 
@@ -262,7 +273,7 @@ struct ABCRecordingFlowView: View {
             HStack {
                 ForEach(steps.indices, id: \.self) { index in
                     Capsule()
-                        .fill(index <= stepIndex ? AICOTheme.primaryOrange : Color.secondary.opacity(0.18))
+                        .fill(index <= stepIndex ? AICOTheme.primaryOrange : AICOTheme.cardGray)
                         .frame(height: 6)
                 }
             }
@@ -319,7 +330,7 @@ struct ABCRecordingFlowView: View {
 
                 Text("자유롭게 메모를 남기고 필요한 사진을 첨부할 수 있어요.")
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AICOTheme.textGray)
             }
 
             TextField("예: 5분 정도 기다린 뒤 좋아하는 장난감을 보여주자 안정되었어요.", text: $note, axis: .vertical)
@@ -339,7 +350,7 @@ struct ABCRecordingFlowView: View {
 
                         Text("선택한 이미지는 앱 내부 로컬 저장소에만 보관됩니다.")
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AICOTheme.textGray)
                     }
 
                     Spacer()
@@ -351,6 +362,13 @@ struct ABCRecordingFlowView: View {
             .buttonStyle(.plain)
 
             if !attachmentNames.isEmpty {
+                if hasSharedPhotoAttachment {
+                    Label("공유한 사진이 첨부되었어요.", systemImage: "checkmark.circle.fill")
+                        .font(.footnote)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(AICOTheme.primaryOrange)
+                }
+
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         ForEach(attachmentNames, id: \.self) { fileName in
@@ -373,7 +391,7 @@ struct ABCRecordingFlowView: View {
             Text(validationMessage ?? bottomHelperText)
                 .font(.footnote)
                 .fontWeight(validationMessage == nil ? .regular : .semibold)
-                .foregroundStyle(validationMessage == nil ? Color.secondary : Color.red)
+                .foregroundStyle(validationMessage == nil ? AICOTheme.textGray : Color.red)
 
             HStack(spacing: 12) {
                 Button {
@@ -385,7 +403,7 @@ struct ABCRecordingFlowView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(AICOTheme.softOrangeBackground.opacity(stepIndex == 0 ? 0.45 : 1))
-                        .foregroundStyle(stepIndex == 0 ? .secondary : AICOTheme.primaryOrange)
+                        .foregroundStyle(stepIndex == 0 ? AICOTheme.textGray : AICOTheme.primaryOrange)
                         .overlay {
                             RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
                                 .stroke(AICOTheme.primaryOrange.opacity(stepIndex == 0 ? 0.12 : 0.35), lineWidth: 1)
@@ -586,6 +604,7 @@ struct ABCRecordingFlowView: View {
         note = ""
         selectedAttachmentItem = nil
         attachmentNames = []
+        hasSharedPhotoAttachment = false
         validationMessage = nil
         savedRecord = nil
     }
@@ -594,6 +613,24 @@ struct ABCRecordingFlowView: View {
         attachmentNames.forEach { ImageStorageService.deleteImage(named: $0) }
         resetFlow()
         dismiss()
+    }
+
+    private func loadPrefilledAttachmentIfNeeded() {
+        guard !didLoadPrefilledAttachment else { return }
+        didLoadPrefilledAttachment = true
+
+        guard let prefilledAttachmentID,
+              let data = SharedPhotoAttachmentStore.imageData(for: prefilledAttachmentID),
+              let fileName = try? ImageStorageService.saveImageData(data, prefix: "record")
+        else {
+            return
+        }
+
+        if !attachmentNames.contains(fileName) {
+            attachmentNames.append(fileName)
+        }
+        hasSharedPhotoAttachment = true
+        SharedPhotoAttachmentStore.deleteAttachment(id: prefilledAttachmentID)
     }
 
     @MainActor
