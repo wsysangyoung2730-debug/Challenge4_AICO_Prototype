@@ -3,6 +3,8 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var sessionState: AnonymousSessionState
+    @Environment(\.modelContext) private var modelContext
+    @AppStorage("aico.guardianRoomCode") private var roomCode = ""
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
 
@@ -11,7 +13,8 @@ struct HomeView: View {
     @State private var isHeroGreetingVisible = false
     @State private var isHeroCharacterVisible = false
     @State private var isHeroCharacterFloating = false
-    @State private var showsSyncPrototypeAlert = false
+    @State private var isSyncing = false
+    @State private var syncStatus: String?
 
     private var recentRecords: [RecordEntry] {
         Array(records.prefix(5))
@@ -107,11 +110,6 @@ struct HomeView: View {
         .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $selectedInfoItem) { item in
             HomeInfoFeedDetailView(item: item)
-        }
-        .alert("동기화 준비 중이에요", isPresented: $showsSyncPrototypeAlert) {
-            Button("확인", role: .cancel) {}
-        } message: {
-            Text("보호자 공유 설정에서 연결 후 사용할 수 있어요.")
         }
     }
 
@@ -260,22 +258,37 @@ struct HomeView: View {
                 Spacer(minLength: 8)
 
                 Button {
-                    showsSyncPrototypeAlert = true
+                    syncNow()
                 } label: {
-                    Label("동기화", systemImage: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(AICOTheme.primaryOrange)
-                        .padding(.horizontal, 12)
-                        .frame(height: 34)
-                        .background(.white, in: Capsule())
-                        .overlay {
-                            Capsule().stroke(AICOTheme.primaryOrange.opacity(0.18), lineWidth: 1)
+                    HStack(spacing: 5) {
+                        if isSyncing {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "arrow.triangle.2.circlepath")
                         }
-                        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
+                        Text("동기화")
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AICOTheme.primaryOrange)
+                    .padding(.horizontal, 12)
+                    .frame(height: 34)
+                    .background(.white, in: Capsule())
+                    .overlay {
+                        Capsule().stroke(AICOTheme.primaryOrange.opacity(0.18), lineWidth: 1)
+                    }
+                    .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
                 }
                 .buttonStyle(.plain)
+                .disabled(isSyncing)
                 .accessibilityLabel("보호자 공유 동기화")
                 .padding(.trailing, 24)
+            }
+
+            if let syncStatus {
+                Text(syncStatus)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(AICOTheme.textGray)
+                    .padding(.horizontal, 24)
             }
 
             if recentRecords.isEmpty {
@@ -390,6 +403,91 @@ struct HomeView: View {
             .map(\.name)
 
         return Array(items.prefix(3))
+    }
+
+    // MARK: - 보호자 간 수동 동기화 (6자리 코드 + Public DB)
+
+    private func syncNow() {
+        guard !roomCode.isEmpty else {
+            syncStatus = "설정 → 보호자 공유 설정에서 공유방을 먼저 만들거나 참여하세요."
+            return
+        }
+        isSyncing = true
+        syncStatus = "동기화 중…"
+        Task {
+            do {
+                let calendar = Calendar.current
+
+                // 1. A가 만든 기록 전부 업로드 (수정분 포함 → 서버 덮어쓰기)
+                let toPush = records.filter {
+                    !$0.isRemote && calendar.isDateInToday($0.createdAt)
+                }
+                let payload = toPush.map { record in
+                    GuardianRecordData(
+                        id: record.id,
+                        recipientName: recipientName(for: record),
+                        createdAt: record.createdAt,
+                        antecedent: record.antecedentCategories,
+                        behavior: record.behaviorCategories,
+                        consequence: record.consequenceCategories,
+                        note: record.note
+                    )
+                }
+                try await GuardianSyncManager.push(payload, roomCode: roomCode)
+
+                // 2. 같은 코드의 오늘 기록을 받아와 병합
+                //   - 로컬에 없으면 추가, 상대 기록이면 수정분 반영, 내 기록이면 스킵
+                let remote = try await GuardianSyncManager.pullToday(roomCode: roomCode)
+                await MainActor.run {
+                    var added = 0
+                    var updated = 0
+                    for data in remote {
+                        if let local = records.first(where: { $0.id == data.id }) {
+                            guard local.isRemote else { continue }
+                            local.recipientId = findOrCreateRecipient(named: data.recipientName)
+                            local.createdAt = data.createdAt
+                            local.antecedentCategories = data.antecedent
+                            local.behaviorCategories = data.behavior
+                            local.consequenceCategories = data.consequence
+                            local.note = data.note
+                            updated += 1
+                        } else {
+                            let entry = RecordEntry(
+                                id: data.id,
+                                recipientId: findOrCreateRecipient(named: data.recipientName),
+                                createdAt: data.createdAt,
+                                antecedentCategories: data.antecedent,
+                                behaviorCategories: data.behavior,
+                                consequenceCategories: data.consequence,
+                                note: data.note
+                            )
+                            entry.isRemote = true
+                            modelContext.insert(entry)
+                            added += 1
+                        }
+                    }
+                    syncStatus = (added == 0 && updated == 0)
+                        ? "최신 상태예요"
+                        : "받음 \(added)개 · 갱신 \(updated)개"
+                    isSyncing = false
+                }
+            } catch {
+                await MainActor.run {
+                    syncStatus = "실패: \(error.localizedDescription)"
+                    isSyncing = false
+                }
+            }
+        }
+    }
+
+    // 받아온 기록의 대상자 이름으로 로컬 프로필을 찾거나 없으면 만들어서 id 반환
+    private func findOrCreateRecipient(named name: String) -> UUID {
+        if let existing = recipients.first(where: { $0.nickname == name }) {
+            return existing.id
+        }
+        let profile = RecipientProfile(nickname: name)
+        modelContext.insert(profile)
+        return profile.id
     }
 }
 

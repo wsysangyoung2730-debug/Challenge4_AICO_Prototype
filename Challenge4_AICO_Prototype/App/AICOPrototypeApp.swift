@@ -1,3 +1,4 @@
+import CloudKit
 import SwiftData
 import SwiftUI
 
@@ -188,5 +189,77 @@ private enum MainNavigationTab: CaseIterable, Identifiable {
         case .report:
             "chart.pie.fill"
         }
+    }
+}
+
+// MARK: - 보호자 간 코드 기반 수동 동기화 (Public DB)
+// CKRecord <->RecordEntry
+struct GuardianRecordData {
+    let id: UUID
+    let recipientName: String
+    let createdAt: Date
+    let antecedent: [String]
+    let behavior: [String]
+    let consequence: [String]
+    let note: String?
+}
+
+enum GuardianSyncManager {
+    // 팀 CloudKit 컨테이너 ID로 교체 + iCloud/CloudKit capability 추가
+    static let containerID = "iCloud.com.gonn.aico.test"
+    static let recordType = "SharedRecord"
+
+    static var db: CKDatabase { CKContainer(identifier: containerID).publicCloudDatabase }
+    
+    static func makeRoomCode() -> String {
+        String(format: "%06d", Int.random(in: 0...999_999))
+    }
+    
+    static func push(_ records: [GuardianRecordData], roomCode: String) async throws {
+        guard !roomCode.isEmpty else {
+            throw NSError(domain: "GuardianSync", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "설정에서 공유방을 먼저 만들거나 참여하세요."])
+        }
+        guard !records.isEmpty else { return }
+        let toSave = records.map { data -> CKRecord in
+            let recordID = CKRecord.ID(recordName: data.id.uuidString)
+            let record = CKRecord(recordType: recordType, recordID: recordID)
+            record["roomCode"] = roomCode as CKRecordValue
+            record["recipientName"] = data.recipientName as CKRecordValue
+            record["createdAt"] = data.createdAt as CKRecordValue
+            record["antecedent"] = data.antecedent as CKRecordValue
+            record["behavior"] = data.behavior as CKRecordValue
+            record["consequence"] = data.consequence as CKRecordValue
+            if let note = data.note { record["note"] = note as CKRecordValue }
+            return record
+        }
+        _ = try await db.modifyRecords(saving: toSave, deleting: [], savePolicy: .allKeys)
+    }
+
+    static func pullToday(roomCode: String) async throws -> [GuardianRecordData] {
+        guard !roomCode.isEmpty else { return [] }
+        let predicate = NSPredicate(format: "roomCode == %@", roomCode)
+        let query = CKQuery(recordType: recordType, predicate: predicate)
+        let result = try await db.records(matching: query)
+
+        let calendar = Calendar.current
+        var out: [GuardianRecordData] = []
+        for (_, recordResult) in result.matchResults {
+            guard let record = try? recordResult.get() else { continue }
+            guard let created = record["createdAt"] as? Date, calendar.isDateInToday(created) else { continue }
+            guard let id = UUID(uuidString: record.recordID.recordName) else { continue }
+            out.append(
+                GuardianRecordData(
+                    id: id,
+                    recipientName: record["recipientName"] as? String ?? "보호자 공유",
+                    createdAt: created,
+                    antecedent: record["antecedent"] as? [String] ?? [],
+                    behavior: record["behavior"] as? [String] ?? [],
+                    consequence: record["consequence"] as? [String] ?? [],
+                    note: record["note"] as? String
+                )
+            )
+        }
+        return out
     }
 }

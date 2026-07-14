@@ -12,6 +12,9 @@ final class RecordEntry {
     var note: String?
     var attachmentNames: [String]
 
+    // 보호자 간 수동 동기화용
+    var isRemote: Bool = false
+
     init(
         id: UUID = UUID(),
         recipientId: UUID,

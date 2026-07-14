@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum CaregiverSharingState {
     case notStarted
@@ -156,71 +157,87 @@ struct CaregiverSharingSettingsView: View {
 
 struct CaregiverInviteView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var showsPrototypeAlert = false
+    @AppStorage("aico.guardianRoomCode") private var roomCode = ""
+    @State private var code = ""
 
     let onMockRoomCreated: () -> Void
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("함께 기록을 확인할 보호자를 초대해보세요.")
+                Text("아래 코드를 상대 보호자에게 알려주세요.")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.black)
 
-                VStack(alignment: .leading, spacing: 12) {
-                    Image(systemName: "link.circle.fill")
+                VStack(spacing: 14) {
+                    Image(systemName: "number.circle.fill")
                         .font(.system(size: 34))
                         .foregroundStyle(AICOTheme.primaryOrange)
 
-                    Text("공유 링크 만들고 상대 초대하기")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.black)
-
-                    Text("버튼을 누르면 초대 링크를 보낼 수 있는 흐름이 연결될 예정입니다.")
-                        .font(.system(size: 14, weight: .medium))
+                    Text("공유방 코드")
+                        .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(AICOTheme.darkGray)
-                        .lineSpacing(3)
+
+                    Text(formattedCode)
+                        .font(.system(size: 40, weight: .bold, design: .rounded))
+                        .foregroundStyle(.black)
+                        .kerning(4)
 
                     Button {
-                        showsPrototypeAlert = true
+                        UIPasteboard.general.string = code
                     } label: {
-                        Text("공유 링크 만들고 초대하기")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(AICOTheme.primaryOrange, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        Label("코드 복사", systemImage: "doc.on.doc")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(AICOTheme.primaryOrange)
                     }
                     .buttonStyle(.plain)
-                    .padding(.top, 4)
                 }
-                .padding(18)
+                .frame(maxWidth: .infinity)
+                .padding(24)
                 .background(.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .shadow(color: .black.opacity(0.05), radius: 12, x: 0, y: 0)
 
-                Text("실제 초대 링크 생성과 CloudKit Sharing 연결은 추후 구현 범위입니다.")
+                Text("상대 보호자가 '기존 공유방 참여하기'에서 이 코드를 입력하면, 홈 화면의 '동기화' 버튼으로 서로의 오늘 기록을 주고받을 수 있어요.")
                     .font(.footnote)
                     .foregroundStyle(AICOTheme.textGray)
+                    .lineSpacing(3)
+
+                Button {
+                    onMockRoomCreated()
+                    dismiss()
+                } label: {
+                    Text("완료")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(AICOTheme.primaryOrange, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+                .buttonStyle(.plain)
             }
             .padding(20)
         }
         .navigationTitle("보호자 초대")
         .navigationBarTitleDisplayMode(.inline)
         .background(AICOTheme.softBackground)
-        .alert("프로토타입 안내", isPresented: $showsPrototypeAlert) {
-            Button("공유방 상태 보기") {
-                onMockRoomCreated()
-                dismiss()
+        .onAppear {
+            if roomCode.isEmpty {
+                roomCode = GuardianSyncManager.makeRoomCode()
             }
-            Button("확인", role: .cancel) {}
-        } message: {
-            Text("실제 초대 링크 생성은 CloudKit 연동 단계에서 구현됩니다.")
+            code = roomCode
         }
+    }
+
+    private var formattedCode: String {
+        guard code.count == 6 else { return code }
+        let mid = code.index(code.startIndex, offsetBy: 3)
+        return "\(code[..<mid]) \(code[mid...])"
     }
 }
 
 struct CaregiverJoinRoomView: View {
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("aico.guardianRoomCode") private var roomCode = ""
     @State private var inviteCode = ""
     @State private var validationMessage: String?
 
@@ -236,9 +253,8 @@ struct CaregiverJoinRoomView: View {
             }
 
             Section("초대 코드") {
-                TextField("초대 코드 입력", text: $inviteCode)
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
+                TextField("6자리 숫자 코드", text: $inviteCode)
+                    .keyboardType(.numberPad)
 
                 if let validationMessage {
                     Text(validationMessage)
@@ -254,7 +270,7 @@ struct CaregiverJoinRoomView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(AICOTheme.primaryOrange)
             } footer: {
-                Text("입력한 코드는 실제 서버나 CloudKit에서 검증하지 않습니다. 화면 흐름 확인을 위한 mock 동작입니다.")
+                Text("상대 보호자가 알려준 6자리 코드를 입력하면, 홈의 '동기화' 버튼으로 같은 코드의 오늘 기록을 주고받아요.")
             }
         }
         .navigationTitle("공유방 참여하기")
@@ -264,11 +280,12 @@ struct CaregiverJoinRoomView: View {
 
     private func joinMockRoom() {
         let trimmedCode = inviteCode.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedCode.isEmpty else {
-            validationMessage = "초대 코드를 입력해주세요."
+        guard trimmedCode.count == 6, trimmedCode.allSatisfy(\.isNumber) else {
+            validationMessage = "6자리 숫자 코드를 입력해주세요."
             return
         }
 
+        roomCode = trimmedCode
         validationMessage = nil
         onMockRoomJoined()
         dismiss()
