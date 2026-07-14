@@ -4,7 +4,6 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var sessionState: AnonymousSessionState
     @Environment(\.modelContext) private var modelContext
-    @AppStorage("aico.guardianRoomCode") private var roomCode = ""
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
 
@@ -408,10 +407,6 @@ struct HomeView: View {
     // MARK: - 보호자 간 수동 동기화 (6자리 코드 + Public DB)
 
     private func syncNow() {
-        guard !roomCode.isEmpty else {
-            syncStatus = "설정 → 보호자 공유 설정에서 공유방을 먼저 만들거나 참여하세요."
-            return
-        }
         isSyncing = true
         syncStatus = "동기화 중…"
         Task {
@@ -433,11 +428,11 @@ struct HomeView: View {
                         note: record.note
                     )
                 }
-                try await GuardianSyncManager.push(payload, roomCode: roomCode)
+                try await GuardianSyncManager.push(payload)
 
-                // 2. 같은 코드의 오늘 기록을 받아와 병합
+                // 2. 공유 존에서 오늘 기록을 받아와 병합
                 //   - 로컬에 없으면 추가, 상대 기록이면 수정분 반영, 내 기록이면 스킵
-                let remote = try await GuardianSyncManager.pullToday(roomCode: roomCode)
+                let remote = try await GuardianSyncManager.pullToday()
                 await MainActor.run {
                     var added = 0
                     var updated = 0

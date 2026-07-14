@@ -7,7 +7,7 @@ enum SwiftDataContainer {
             RecordEntry.self,
             RecordCategory.self
         ])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
 
         do {
             return try ModelContainer(for: schema, configurations: [configuration])

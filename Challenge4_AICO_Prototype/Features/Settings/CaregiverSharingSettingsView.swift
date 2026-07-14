@@ -1,3 +1,4 @@
+import CloudKit
 import SwiftUI
 import UIKit
 
@@ -156,139 +157,121 @@ struct CaregiverSharingSettingsView: View {
 }
 
 struct CaregiverInviteView: View {
-    @Environment(\.dismiss) private var dismiss
-    @AppStorage("aico.guardianRoomCode") private var roomCode = ""
-    @State private var code = ""
+    @State private var status = "대기 중"
+    @State private var pendingShare: CKShare?
+    @State private var showShareSheet = false
 
     let onMockRoomCreated: () -> Void
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("아래 코드를 상대 보호자에게 알려주세요.")
+                Text("초대 링크를 만들어 상대 보호자에게 보내세요.")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.black)
 
-                VStack(spacing: 14) {
-                    Image(systemName: "number.circle.fill")
+                VStack(alignment: .leading, spacing: 12) {
+                    Image(systemName: "link.circle.fill")
                         .font(.system(size: 34))
                         .foregroundStyle(AICOTheme.primaryOrange)
 
-                    Text("공유방 코드")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(AICOTheme.darkGray)
-
-                    Text(formattedCode)
-                        .font(.system(size: 40, weight: .bold, design: .rounded))
+                    Text("공유 링크 만들고 초대하기")
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(.black)
-                        .kerning(4)
+
+                    Text("버튼을 누르면 초대창이 떠요. 메시지·메일 또는 '링크 복사'로 상대에게 보내면, 상대가 링크를 눌러 수락합니다.")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(AICOTheme.darkGray)
+                        .lineSpacing(3)
 
                     Button {
-                        UIPasteboard.general.string = code
+                        createShare()
                     } label: {
-                        Label("코드 복사", systemImage: "doc.on.doc")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(AICOTheme.primaryOrange)
+                        Text("공유 링크 만들고 초대하기")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(AICOTheme.primaryOrange, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                     .buttonStyle(.plain)
+                    .padding(.top, 4)
+
+                    Text(status)
+                        .font(.footnote)
+                        .foregroundStyle(AICOTheme.textGray)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(24)
+                .padding(18)
                 .background(.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .shadow(color: .black.opacity(0.05), radius: 12, x: 0, y: 0)
 
-                Text("상대 보호자가 '기존 공유방 참여하기'에서 이 코드를 입력하면, 홈 화면의 '동기화' 버튼으로 서로의 오늘 기록을 주고받을 수 있어요.")
+                Text("연결이 끝나면 홈 화면의 '동기화' 버튼으로 서로의 오늘 기록을 주고받아요.")
                     .font(.footnote)
                     .foregroundStyle(AICOTheme.textGray)
                     .lineSpacing(3)
-
-                Button {
-                    onMockRoomCreated()
-                    dismiss()
-                } label: {
-                    Text("완료")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(AICOTheme.primaryOrange, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                .buttonStyle(.plain)
             }
             .padding(20)
         }
         .navigationTitle("보호자 초대")
         .navigationBarTitleDisplayMode(.inline)
         .background(AICOTheme.softBackground)
-        .onAppear {
-            if roomCode.isEmpty {
-                roomCode = GuardianSyncManager.makeRoomCode()
+        .sheet(isPresented: $showShareSheet, onDismiss: { onMockRoomCreated() }) {
+            if let share = pendingShare {
+                CloudSharingView(share: share, container: GuardianSyncManager.container)
             }
-            code = roomCode
         }
     }
 
-    private var formattedCode: String {
-        guard code.count == 6 else { return code }
-        let mid = code.index(code.startIndex, offsetBy: 3)
-        return "\(code[..<mid]) \(code[mid...])"
+    private func createShare() {
+        status = "공유 준비 중…"
+        Task {
+            do {
+                let share = try await GuardianSyncManager.setupOwnerShare()
+                await MainActor.run {
+                    pendingShare = share
+                    showShareSheet = true
+                    status = "초대창에서 상대에게 링크를 보내세요."
+                }
+            } catch {
+                await MainActor.run { status = "실패: \(error.localizedDescription)" }
+            }
+        }
     }
 }
 
 struct CaregiverJoinRoomView: View {
-    @Environment(\.dismiss) private var dismiss
-    @AppStorage("aico.guardianRoomCode") private var roomCode = ""
-    @State private var inviteCode = ""
-    @State private var validationMessage: String?
-
     let onMockRoomJoined: () -> Void
 
     var body: some View {
-        Form {
-            Section {
-                Text("초대한 보호자가 보낸 코드를 입력해 참여할 수 있어요.")
-                    .font(.subheadline)
-                    .foregroundStyle(AICOTheme.darkGray)
-                    .listRowBackground(Color.clear)
-            }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("초대받은 보호자는 따로 입력할 게 없어요.")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.black)
 
-            Section("초대 코드") {
-                TextField("6자리 숫자 코드", text: $inviteCode)
-                    .keyboardType(.numberPad)
+                VStack(alignment: .leading, spacing: 12) {
+                    Image(systemName: "envelope.open.fill")
+                        .font(.system(size: 34))
+                        .foregroundStyle(AICOTheme.primaryOrange)
 
-                if let validationMessage {
-                    Text(validationMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
+                    Text("받은 초대 링크를 누르면 끝")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.black)
+
+                    Text("초대한 보호자가 메시지·메일로 보낸 링크를 누르면 자동으로 이 공유방에 연결돼요. 그다음 홈 화면의 '동기화' 버튼으로 서로의 오늘 기록을 주고받아요.")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(AICOTheme.darkGray)
+                        .lineSpacing(3)
                 }
+                .padding(18)
+                .background(.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .shadow(color: .black.opacity(0.05), radius: 12, x: 0, y: 0)
             }
-
-            Section {
-                Button("참여하기") {
-                    joinMockRoom()
-                }
-                .fontWeight(.semibold)
-                .foregroundStyle(AICOTheme.primaryOrange)
-            } footer: {
-                Text("상대 보호자가 알려준 6자리 코드를 입력하면, 홈의 '동기화' 버튼으로 같은 코드의 오늘 기록을 주고받아요.")
-            }
+            .padding(20)
         }
         .navigationTitle("공유방 참여하기")
-        .scrollContentBackground(.hidden)
+        .navigationBarTitleDisplayMode(.inline)
         .background(AICOTheme.softBackground)
-    }
-
-    private func joinMockRoom() {
-        let trimmedCode = inviteCode.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmedCode.count == 6, trimmedCode.allSatisfy(\.isNumber) else {
-            validationMessage = "6자리 숫자 코드를 입력해주세요."
-            return
-        }
-
-        roomCode = trimmedCode
-        validationMessage = nil
-        onMockRoomJoined()
-        dismiss()
     }
 }
 
@@ -505,6 +488,30 @@ private extension MockCaregiverSharingRoom {
                 MockCaregiverParticipant(name: "나", roleDescription: "초대받은 보호자", status: "연결됨", isCurrentUser: true)
             ]
         )
+    }
+}
+
+// UICloudSharingController를 SwiftUI에서 쓰기 위한 래퍼 (초대 UI)
+private struct CloudSharingView: UIViewControllerRepresentable {
+    let share: CKShare
+    let container: CKContainer
+
+    func makeUIViewController(context: Context) -> UICloudSharingController {
+        let controller = UICloudSharingController(share: share, container: container)
+        controller.availablePermissions = [.allowReadWrite, .allowPrivate]
+        controller.delegate = context.coordinator
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: UICloudSharingController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator: NSObject, UICloudSharingControllerDelegate {
+        func cloudSharingController(_ csc: UICloudSharingController, failedToSaveShareWithError error: Error) {
+            print("공유 저장 실패:", error)
+        }
+        func itemTitle(for csc: UICloudSharingController) -> String? { "AICO 보호자 공유" }
     }
 }
 
