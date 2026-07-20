@@ -22,7 +22,7 @@ struct ABCRecordingFlowView: View {
     @State private var attachmentNames: [String] = []
     @State private var categoryInputStage: RecordCategoryStage?
     @State private var newCategoryName = ""
-    @State private var savedRecord: RecordEntry?
+    @State private var showsCompletionAlert = false
     @State private var validationMessage: String?
     @State private var recipientSwitchMessage: String?
     @State private var showsRecipientSelector = false
@@ -46,40 +46,32 @@ struct ABCRecordingFlowView: View {
     }
 
     var body: some View {
-        Group {
-            if savedRecord != nil {
-                RecordingCompletionView(
-                    onReturnHome: { dismiss() }
-                )
-            } else {
-                ZStack {
-                    VStack(spacing: 0) {
-                        VStack(alignment: .leading, spacing: 28) {
-                            recordControls
-                            progressBar
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 20)
-                        .padding(.bottom, 28)
-
-                        ScrollView {
-                            currentStepContent
-                                .padding(.horizontal, 24)
-                                .padding(.bottom, 16)
-                        }
-
-                        bottomActionArea
-                    }
-
-                    if showsRecipientSelector {
-                        recipientSelectorOverlay
-                    }
+        ZStack {
+            VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 28) {
+                    recordControls
+                    progressBar
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+                .padding(.bottom, 28)
+
+                ScrollView {
+                    currentStepContent
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 16)
+                }
+
+                bottomActionArea
+            }
+
+            if showsRecipientSelector {
+                recipientSelectorOverlay
             }
         }
         .background(AICOTheme.softBackground)
         .toolbar(.hidden, for: .navigationBar)
-        .navigationBarBackButtonHidden(savedRecord == nil)
+        .navigationBarBackButtonHidden()
         .onChange(of: selectedAttachmentItem) {
             Task { await saveSelectedAttachment() }
         }
@@ -124,6 +116,13 @@ struct ABCRecordingFlowView: View {
             }
         } message: {
             Text("현재 단계에 맞는 항목으로 저장됩니다.")
+        }
+        .alert("기록이 등록되었어요", isPresented: $showsCompletionAlert) {
+            Button("확인") {
+                dismiss()
+            }
+        } message: {
+            Text("등록된 기록은 기록 보관함에서 확인할 수 있어요.")
         }
     }
 
@@ -540,11 +539,11 @@ struct ABCRecordingFlowView: View {
     }
 
     private var canChangeDate: Bool {
-        steps[stepIndex] == .antecedent && savedRecord == nil
+        steps[stepIndex] == .antecedent
     }
 
     private var canSwitchRecipient: Bool {
-        steps[stepIndex] == .antecedent && savedRecord == nil
+        steps[stepIndex] == .antecedent
     }
 
     private var hasDraftContent: Bool {
@@ -685,7 +684,7 @@ struct ABCRecordingFlowView: View {
         modelContext.insert(record)
         try? modelContext.save()
         updateWidgetSnapshot(with: record)
-        savedRecord = record
+        showsCompletionAlert = true
     }
 
     private func updateWidgetSnapshot(with newRecord: RecordEntry) {
@@ -707,7 +706,7 @@ struct ABCRecordingFlowView: View {
         attachmentNames = []
         hasSharedPhotoAttachment = false
         validationMessage = nil
-        savedRecord = nil
+        showsCompletionAlert = false
     }
 
     private func discardDraftAndDismiss() {
