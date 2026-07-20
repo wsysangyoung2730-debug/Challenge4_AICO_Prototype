@@ -6,9 +6,10 @@ struct CategorySelectionStepView: View {
     let helperText: String
     let categories: [RecordCategory]
     @Binding var selectedNames: Set<String>
+    @Binding var note: String
     let onAddCategory: () -> Void
 
-    private let consequenceResponseNames = ["음식/음료", "휴식", "공간 이동", "안아줌", "거리두기", "시각자료", "활동 전환"]
+    private let consequenceResponseNames = ["음식/음료 제공", "휴식 제공", "공간 이동", "안아줌", "거리둠", "그림/시각자료", "활동 전환"]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 28) {
@@ -21,16 +22,15 @@ struct CategorySelectionStepView: View {
             }
 
             categoryContent
+
+            additionalNoteField
         }
     }
 
     private var titleView: some View {
-        let parts = title.split(separator: " ", maxSplits: 1).map(String.init)
-        let prefix = parts.first ?? title
-        let suffix = parts.count > 1 ? " " + parts[1] : ""
-
-        return (Text(prefix).foregroundStyle(AICOTheme.primaryOrange) + Text(suffix).foregroundStyle(.primary))
-            .font(.system(size: 26, weight: .bold))
+        Text(title)
+            .font(.system(size: 24, weight: .semibold))
+            .foregroundStyle(.primary)
     }
 
     @ViewBuilder
@@ -41,21 +41,23 @@ struct CategorySelectionStepView: View {
                 categoryGroup(title: "대응 결과", categories: resultCategories, showsAddButton: false)
             }
         } else {
-            TagFlowLayout(horizontalSpacing: 10, verticalSpacing: 12) {
-                ForEach(categories) { category in
-                    categoryChip(category)
-                }
+            VStack(alignment: .leading, spacing: 14) {
+                requiredLabel(stage == .antecedent ? "선행 상황" : "관찰 행동")
 
-                addCategoryButton
+                TagFlowLayout(horizontalSpacing: 10, verticalSpacing: 12) {
+                    ForEach(categories) { category in
+                        categoryChip(category)
+                    }
+
+                    addCategoryButton
+                }
             }
         }
     }
 
     private func categoryGroup(title: String, categories: [RecordCategory], showsAddButton: Bool) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(title)
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(.primary)
+            requiredLabel(title)
 
             TagFlowLayout(horizontalSpacing: 10, verticalSpacing: 12) {
                 ForEach(categories) { category in
@@ -66,6 +68,25 @@ struct CategorySelectionStepView: View {
                     addCategoryButton
                 }
             }
+        }
+    }
+
+    private func requiredLabel(_ title: String) -> some View {
+        (Text(title).foregroundStyle(.primary) + Text(" *").foregroundStyle(AICOTheme.primaryOrange))
+            .font(.system(size: 16, weight: .semibold))
+    }
+
+    private var additionalNoteField: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("추가 기록")
+                .font(.system(size: 16, weight: .semibold))
+
+            TextField("시간, 환경, 발언 내용, 현장에 있었던 사람 등", text: $note, axis: .vertical)
+                .lineLimit(2...4)
+                .font(.body)
+                .padding(16)
+                .background(Color(red: 0.918, green: 0.918, blue: 0.918))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
         }
     }
 
@@ -82,12 +103,12 @@ struct CategorySelectionStepView: View {
             onAddCategory()
         } label: {
             Label("태그 추가", systemImage: "plus")
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: 16, weight: .semibold))
                 .labelStyle(.titleAndIcon)
-                .padding(.horizontal, 18)
-                .frame(height: 42)
-                .background(AICOTheme.primaryOrange.opacity(0.12))
-                .foregroundStyle(AICOTheme.primaryOrange)
+                .padding(.horizontal, 12)
+                .frame(height: 34)
+                .background(Color(red: 0.918, green: 0.918, blue: 0.918))
+                .foregroundStyle(AICOTheme.textGray)
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -104,14 +125,20 @@ struct CategorySelectionStepView: View {
             }
         } label: {
             Text(category.name)
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: 16, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
-                .padding(.horizontal, 17)
-                .frame(height: 42)
-                .background(isSelected ? AICOTheme.primaryOrange : AICOTheme.cardBackground)
+                .padding(.horizontal, 12)
+                .frame(height: 34)
+                .background(isSelected ? AICOTheme.primaryOrange : Color.clear)
                 .foregroundStyle(isSelected ? .white : Color.secondary)
                 .clipShape(Capsule())
+                .overlay {
+                    if !isSelected {
+                        Capsule()
+                            .stroke(Color(red: 0.855, green: 0.855, blue: 0.855), lineWidth: 1)
+                    }
+                }
         }
         .buttonStyle(.plain)
     }
