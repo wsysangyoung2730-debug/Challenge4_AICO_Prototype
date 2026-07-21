@@ -5,140 +5,235 @@ struct ArchiveView: View {
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
 
-    @State private var selectedDateFilter: ArchiveDateFilter = .all
-    @State private var selectedStageFilter: ArchiveStageFilter = .all
+    @State private var selectedStageFilter: ArchiveStageFilter = .antecedent
     @State private var selectedCategoryName: String?
+    @State private var sortOrder: ArchiveSortOrder = .newest
 
-    private var dateFilteredRecords: [RecordEntry] {
-        records.filter { selectedDateFilter.contains($0.createdAt) }
-    }
+    private let columns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
 
     private var stageFilteredRecords: [RecordEntry] {
-        dateFilteredRecords.filter { selectedStageFilter.contains($0) }
+        records.filter { selectedStageFilter.contains($0) }
     }
 
     private var filteredRecords: [RecordEntry] {
-        guard let selectedCategoryName else {
-            return stageFilteredRecords
+        let filtered = stageFilteredRecords.filter { record in
+            guard let selectedCategoryName else { return true }
+            return selectedStageFilter.contains(record, categoryName: selectedCategoryName)
         }
 
-        return stageFilteredRecords.filter {
-            selectedStageFilter.contains($0, categoryName: selectedCategoryName)
+        return filtered.sorted {
+            switch sortOrder {
+            case .newest:
+                $0.createdAt > $1.createdAt
+            case .oldest:
+                $0.createdAt < $1.createdAt
+            }
         }
     }
 
     private var availableCategoryNames: [String] {
-        let names = stageFilteredRecords.flatMap { selectedStageFilter.categoryNames(in: $0) }
-        return Array(Set(names)).sorted()
-    }
-
-    private var resultSummary: String {
-        if filteredRecords.isEmpty {
-            return records.isEmpty ? "저장된 기록이 아직 없어요." : "조건에 맞는 기록이 없어요."
-        }
-
-        if selectedDateFilter == .all && selectedStageFilter == .all && selectedCategoryName == nil {
-            return "총 \(filteredRecords.count)개의 기록이 있어요."
-        }
-
-        return "조건에 맞는 기록 \(filteredRecords.count)개를 찾았어요."
+        Array(Set(stageFilteredRecords.flatMap { selectedStageFilter.categoryNames(in: $0) })).sorted()
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AICOTheme.sectionSpacing) {
-                if records.isEmpty {
-                    emptyState
-                } else {
-                    ArchiveFilterView(
-                        selectedDateFilter: $selectedDateFilter,
-                        selectedStageFilter: $selectedStageFilter,
-                        selectedCategoryName: $selectedCategoryName,
-                        availableCategoryNames: availableCategoryNames
-                    )
+        ZStack {
+            AICOTheme.appBackground.ignoresSafeArea()
 
-                    Text(resultSummary)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(filteredRecords.isEmpty ? AICOTheme.textGray : AICOTheme.primaryOrange)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    header
 
-                    if filteredRecords.isEmpty {
-                        filteredEmptyState
-                    } else {
-                        LazyVStack(spacing: 12) {
-                            ForEach(filteredRecords) { record in
-                                NavigationLink {
-                                    RecordDetailView(
-                                        record: record,
-                                        recipientName: recipientName(for: record)
-                                    )
-                                } label: {
-                                    ArchiveRecordCardView(
-                                        record: record,
-                                        recipientName: recipientName(for: record)
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
+                    HStack(alignment: .center) {
+                        Text("기록 보관함")
+                            .font(.system(size: 28, weight: .semibold))
+
+                        Spacer()
+
+                        stagePicker
                     }
+
+                    categoryFilter
+
+                    HStack {
+                        Text("총 \(filteredRecords.count)건")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+
+                        Spacer()
+
+                        sortMenu
+                    }
+
+                    recordsContent
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 24)
             }
-            .padding(AICOTheme.screenPadding)
+            .scrollIndicators(.hidden)
         }
-        .navigationTitle("아카이브")
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .background(AICOTheme.softBackground)
+        .toolbar(.hidden, for: .navigationBar)
         .onChange(of: selectedStageFilter) {
             selectedCategoryName = nil
         }
-        .onChange(of: selectedDateFilter) {
-            selectedCategoryName = nil
+    }
+
+    private var header: some View {
+        HStack(spacing: 14) {
+            Image("AICOStar")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 36, height: 36)
+                .accessibilityHidden(true)
+
+            Spacer()
+
+            Button {
+                // 알림 화면이 정해지면 연결합니다.
+            } label: {
+                Image(systemName: "bell")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .frame(width: 48, height: 48)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .shadow(color: .black.opacity(0.12), radius: 16, x: 0, y: 8)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("알림")
+
+            NavigationLink {
+                SettingsView()
+            } label: {
+                Image("AICOLogo")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 48, height: 48)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("설정")
+        }
+    }
+
+    private var stagePicker: some View {
+        Picker("기록 단계", selection: $selectedStageFilter) {
+            ForEach(ArchiveStageFilter.archiveCases) { filter in
+                Text(filter.shortTitle).tag(filter)
+            }
+        }
+        .pickerStyle(.segmented)
+        .frame(width: 104)
+    }
+
+    @ViewBuilder
+    private var categoryFilter: some View {
+        if !availableCategoryNames.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(availableCategoryNames, id: \.self) { name in
+                        categoryChip(name)
+                    }
+                }
+            }
+            .contentMargins(.horizontal, 0, for: .scrollContent)
+        }
+    }
+
+    private func categoryChip(_ name: String) -> some View {
+        let isSelected = selectedCategoryName == name
+
+        return Button {
+            selectedCategoryName = isSelected ? nil : name
+        } label: {
+            Text(name)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(isSelected ? Color.white : AICOTheme.textGray)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isSelected ? AICOTheme.primaryOrange : Color.clear)
+                .overlay {
+                    if !isSelected {
+                        Capsule().stroke(Color(.separator), lineWidth: 1)
+                    }
+                }
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var sortMenu: some View {
+        Menu {
+            Picker("정렬", selection: $sortOrder) {
+                ForEach(ArchiveSortOrder.allCases) { order in
+                    Text(order.rawValue).tag(order)
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(sortOrder.rawValue)
+                Image(systemName: "chevron.down")
+                    .font(.caption)
+            }
+            .font(.subheadline)
+            .fontWeight(.semibold)
+            .foregroundStyle(AICOTheme.textGray)
+        }
+    }
+
+    @ViewBuilder
+    private var recordsContent: some View {
+        if records.isEmpty {
+            emptyState
+        } else if filteredRecords.isEmpty {
+            PlaceholderCardView(
+                title: "조건에 맞는 기록이 없어요.",
+                message: "단계나 카테고리를 바꾸면 다른 기록을 확인할 수 있어요.",
+                systemImage: "line.3.horizontal.decrease.circle"
+            )
+        } else {
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(filteredRecords) { record in
+                    NavigationLink {
+                        RecordDetailView(
+                            record: record,
+                            recipientName: recipientName(for: record)
+                        )
+                    } label: {
+                        ArchiveRecordCardView(
+                            record: record,
+                            recipientName: recipientName(for: record)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
     }
 
     private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Image(systemName: "archivebox")
-                .font(.largeTitle)
-                .foregroundStyle(AICOTheme.primaryOrange)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("아직 저장된 기록이 없어요.")
-                    .font(.title3)
-                    .fontWeight(.bold)
-
-                Text("+ 기록 버튼을 눌러 첫 기록을 남기면 이곳에서 다시 확인할 수 있어요.")
-                    .font(.body)
-                    .foregroundStyle(AICOTheme.textGray)
-            }
-
-            Text("기록 시작하기")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundStyle(AICOTheme.primaryOrange)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(AICOTheme.primaryOrange.opacity(0.12))
-                .clipShape(Capsule())
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AICOTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
-    }
-
-    private var filteredEmptyState: some View {
         PlaceholderCardView(
-            title: "조건에 맞는 기록이 없어요.",
-            message: "필터를 바꾸면 다른 기록을 확인할 수 있어요.",
-            systemImage: "line.3.horizontal.decrease.circle"
+            title: "아직 저장된 기록이 없어요.",
+            message: "+ 기록 버튼을 눌러 첫 기록을 남겨보세요.",
+            systemImage: "archivebox"
         )
     }
 
     private func recipientName(for record: RecordEntry) -> String {
         recipients.first { $0.id == record.recipientId }?.nickname ?? "등록된 대상자"
     }
+}
+
+enum ArchiveSortOrder: String, CaseIterable, Identifiable {
+    case newest = "최신순"
+    case oldest = "오래된순"
+
+    var id: Self { self }
 }
 
 enum ArchiveDateFilter: String, CaseIterable, Identifiable {
@@ -178,7 +273,18 @@ enum ArchiveStageFilter: String, CaseIterable, Identifiable {
     case behavior = "B단계"
     case consequence = "C단계"
 
+    static let archiveCases: [ArchiveStageFilter] = [.antecedent, .behavior, .consequence]
+
     var id: Self { self }
+
+    var shortTitle: String {
+        switch self {
+        case .all: "전체"
+        case .antecedent: "A"
+        case .behavior: "B"
+        case .consequence: "C"
+        }
+    }
 
     func contains(_ record: RecordEntry) -> Bool {
         switch self {

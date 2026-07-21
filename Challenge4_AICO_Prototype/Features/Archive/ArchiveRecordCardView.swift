@@ -4,76 +4,84 @@ struct ArchiveRecordCardView: View {
     let record: RecordEntry
     let recipientName: String
 
+    private var title: String {
+        record.behaviorCategories.first ?? recipientName
+    }
+
+    private var stageSummaries: [ArchiveCardStageSummary] {
+        [
+            ArchiveCardStageSummary(stage: "A", values: record.antecedentCategories),
+            ArchiveCardStageSummary(stage: "B", values: record.behaviorCategories),
+            ArchiveCardStageSummary(stage: "C", values: record.consequenceCategories)
+        ]
+        .filter { !$0.values.isEmpty }
+        .prefix(2)
+        .map { $0 }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(recipientName)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(record.createdAt.formatted(.dateTime.year().month(.twoDigits).day(.twoDigits).hour().minute()))
+                    .font(.caption)
+                    .foregroundStyle(AICOTheme.textGray)
+                    .lineLimit(1)
 
-                    Text(record.createdAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(AICOTheme.textGray)
-                }
-
-                Spacer()
-
-                if !record.attachmentNames.isEmpty {
-                    Label("첨부", systemImage: "paperclip")
-                        .font(.caption)
-                        .foregroundStyle(AICOTheme.primaryOrange)
-                }
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
             }
 
-            VStack(alignment: .leading, spacing: 7) {
-                ArchiveStageSummaryRow(label: "[A단계]", values: record.antecedentCategories)
-                ArchiveStageSummaryRow(label: "[B단계]", values: record.behaviorCategories)
-                ArchiveStageSummaryRow(label: "[C단계]", values: record.consequenceCategories)
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(stageSummaries) { summary in
+                    ArchiveStageChipRow(summary: summary)
+                }
             }
 
             if let note = record.note, !note.isEmpty {
                 Text(note)
                     .font(.subheadline)
-                    .foregroundStyle(AICOTheme.textGray)
-                    .lineLimit(2)
-                    .padding(.top, 2)
+                    .foregroundStyle(AICOTheme.darkGray)
+                    .lineLimit(1)
             }
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .frame(maxWidth: .infinity, minHeight: 206, alignment: .topLeading)
         .background(AICOTheme.cardBackground)
-        .overlay {
-            RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
-                .stroke(AICOTheme.primaryOrange.opacity(0.12), lineWidth: 1)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .shadow(color: .black.opacity(0.04), radius: 6)
+        .accessibilityElement(children: .combine)
     }
 }
 
-struct ArchiveStageSummaryRow: View {
-    let label: String
-    let values: [String]
+private struct ArchiveStageChipRow: View {
+    let summary: ArchiveCardStageSummary
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text(label)
+        HStack(spacing: 4) {
+            Text(summary.stage)
                 .font(.caption)
-                .fontWeight(.bold)
+                .fontWeight(.semibold)
+                .foregroundStyle(.white)
+                .frame(width: 30, height: 30)
+                .background(AICOTheme.primaryOrange, in: Circle())
+
+            Text(summary.values.first ?? "")
+                .font(.caption)
+                .fontWeight(.semibold)
                 .foregroundStyle(AICOTheme.primaryOrange)
-                .frame(width: 48, alignment: .leading)
-
-            Text(summaryText)
-                .font(.subheadline)
-                .foregroundStyle(values.isEmpty ? AICOTheme.textGray : .primary)
-                .lineLimit(2)
-
-            Spacer()
+                .lineLimit(1)
+                .padding(.horizontal, 10)
+                .frame(height: 30)
+                .background(AICOTheme.primaryOrange.opacity(0.1), in: Capsule())
         }
     }
+}
 
-    private var summaryText: String {
-        let text = values.prefix(3).joined(separator: ", ")
-        return text.isEmpty ? "선택 없음" : text
-    }
+private struct ArchiveCardStageSummary: Identifiable {
+    let stage: String
+    let values: [String]
+
+    var id: String { stage }
 }
