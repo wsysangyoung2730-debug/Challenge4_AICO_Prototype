@@ -2,6 +2,7 @@ import SwiftData
 import SwiftUI
 
 struct ArchiveView: View {
+    @EnvironmentObject private var sessionState: AnonymousSessionState
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
 
@@ -15,7 +16,13 @@ struct ArchiveView: View {
     ]
 
     private var stageFilteredRecords: [RecordEntry] {
-        records.filter { selectedStageFilter.contains($0) }
+        records.filter {
+            $0.recipientId == selectedRecipient?.id && selectedStageFilter.contains($0)
+        }
+    }
+
+    private var selectedRecipient: RecipientProfile? {
+        recipients.first { $0.id == sessionState.selectedRecipientID } ?? recipients.first
     }
 
     private var filteredRecords: [RecordEntry] {
@@ -93,30 +100,7 @@ struct ArchiveView: View {
 
             Spacer()
 
-            Button {
-                // 알림 화면이 정해지면 연결합니다.
-            } label: {
-                Image(systemName: "bell")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(.primary)
-                    .frame(width: 48, height: 48)
-                    .background(.ultraThinMaterial, in: Circle())
-                    .shadow(color: .black.opacity(0.12), radius: 16, x: 0, y: 8)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("알림")
-
-            NavigationLink {
-                SettingsView()
-            } label: {
-                Image("AICOLogo")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 48, height: 48)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("설정")
+            MainHeaderActions(recipients: recipients)
         }
     }
 

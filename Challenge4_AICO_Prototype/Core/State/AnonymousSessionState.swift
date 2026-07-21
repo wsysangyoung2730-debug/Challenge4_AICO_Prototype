@@ -8,6 +8,7 @@ final class AnonymousSessionState: ObservableObject {
         static let hasSeenServiceIntro = "aico.hasSeenServiceIntro"
         static let hasSeenHomeTutorial = "aico.hasSeenHomeTutorial"
         static let hasSeenRecordingTutorial = "aico.hasSeenRecordingTutorial"
+        static let selectedRecipientID = "aico.selectedRecipientID"
     }
 
     private let defaults: UserDefaults
@@ -28,6 +29,12 @@ final class AnonymousSessionState: ObservableObject {
         didSet { defaults.set(hasSeenRecordingTutorial, forKey: Key.hasSeenRecordingTutorial) }
     }
 
+    @Published var selectedRecipientID: UUID? {
+        didSet {
+            defaults.set(selectedRecipientID?.uuidString, forKey: Key.selectedRecipientID)
+        }
+    }
+
     @Published var hasPlayedHomeBadgeAnimationThisSession = false
 
     @Published var hasPlayedHomeHeroAnimationThisSession = false
@@ -38,6 +45,7 @@ final class AnonymousSessionState: ObservableObject {
         self.hasSeenServiceIntro = defaults.bool(forKey: Key.hasSeenServiceIntro)
         self.hasSeenHomeTutorial = defaults.bool(forKey: Key.hasSeenHomeTutorial)
         self.hasSeenRecordingTutorial = defaults.bool(forKey: Key.hasSeenRecordingTutorial)
+        self.selectedRecipientID = defaults.string(forKey: Key.selectedRecipientID).flatMap(UUID.init(uuidString:))
     }
 
     func completeServiceIntro() {
@@ -51,5 +59,9 @@ final class AnonymousSessionState: ObservableObject {
 
     func completeRecordingTutorial() {
         hasSeenRecordingTutorial = true
+    }
+
+    func selectRecipient(_ recipient: RecipientProfile) {
+        selectedRecipientID = recipient.id
     }
 }

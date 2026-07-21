@@ -3,6 +3,7 @@ import SwiftData
 import SwiftUI
 
 struct ABCRecordingFlowView: View {
+    @EnvironmentObject private var sessionState: AnonymousSessionState
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \RecordCategory.createdAt) private var categories: [RecordCategory]
@@ -76,6 +77,7 @@ struct ABCRecordingFlowView: View {
             Task { await saveSelectedAttachment() }
         }
         .task {
+            sessionState.selectedRecipientID = currentRecipientID
             loadPrefilledAttachmentIfNeeded()
         }
         .sheet(isPresented: $showsDatePicker) {
@@ -153,8 +155,16 @@ struct ABCRecordingFlowView: View {
 
             Spacer(minLength: 8)
 
-            profileSwitcher
-            dateSelector
+            Text(selectedDate.formatted(.dateTime.year().month().day().locale(Locale(identifier: "ko_KR"))))
+                .font(.system(size: 16, weight: .semibold))
+                .lineLimit(1)
+
+            MainHeaderActions(
+                recipients: recipients,
+                showsCalendar: true,
+                onCalendarTap: canChangeDate ? { showsDatePicker = true } : nil,
+                onProfileTap: handleRecipientSwitcherTap
+            )
         }
     }
 
@@ -570,6 +580,7 @@ struct ABCRecordingFlowView: View {
     private func selectRecipient(_ recipient: RecipientProfile) {
         guard recipient.id != currentRecipientID else { return }
         currentRecipientID = recipient.id
+        sessionState.selectRecipient(recipient)
         clearDraftForRecipientSwitch()
     }
 
