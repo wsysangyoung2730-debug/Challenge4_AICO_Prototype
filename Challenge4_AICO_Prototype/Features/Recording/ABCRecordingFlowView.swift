@@ -666,6 +666,9 @@ struct ABCRecordingFlowView: View {
         try? modelContext.save()
         updateWidgetSnapshot(with: record)
         savedRecord = record
+
+        // 저장 즉시 공유 존에 업로드 → 상대 기기에 푸시로 자동 반영됨
+        Task { await GuardianAutoSync.sync() }
     }
 
     private func updateWidgetSnapshot(with newRecord: RecordEntry) {

@@ -4,10 +4,9 @@ import SwiftUI
 
 @main
 struct AICOPrototypeApp: App {
-    // CKShare 공유 수락(상대가 링크 누를 때) 처리에 필요
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var sessionState = AnonymousSessionState()
-
+    
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -17,8 +16,19 @@ struct AICOPrototypeApp: App {
     }
 }
 
-// 상대 보호자가 받은 공유 링크를 누르면 iOS가 여기로 초대 정보를 넘겨줌 → 수락
 final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        application.registerForRemoteNotifications()
+        Task {
+            await GuardianSyncManager.registerSubscriptionIfNeeded()
+            await GuardianAutoSync.sync()
+        }
+        return true
+    }
+    
     func application(
         _ application: UIApplication,
         userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata
@@ -28,14 +38,39 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         operation.perShareResultBlock = { _, result in
             if case let .failure(error) = result { print("공유 수락 실패:", error) }
         }
+        operation.acceptSharesResultBlock = { _ in
+            
+            Task {
+                await GuardianSyncManager.registerSubscriptionIfNeeded()
+                await GuardianAutoSync.sync()
+            }
+        }
         container.add(operation)
+    }
+    
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        Task {
+            await GuardianAutoSync.sync()
+            completionHandler(.newData)
+        }
+    }
+    
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        print("원격 알림 등록 실패:", error)
     }
 }
 
 private struct RootView: View {
     @EnvironmentObject private var sessionState: AnonymousSessionState
     @State private var pendingDeepLink: AICODeepLink?
-
+    
     var body: some View {
         Group {
             if sessionState.hasSeenServiceIntro {
@@ -62,7 +97,7 @@ private struct MainTabView: View {
     @State private var activeDeepLink: AICODeepLink?
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
-
+    
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
@@ -70,7 +105,7 @@ private struct MainTabView: View {
                     .safeAreaInset(edge: .bottom) {
                         Color.clear.frame(height: 104)
                     }
-
+                
                 FloatingBottomNavigationBar(selectedTab: $selectedTab)
             }
             .navigationDestination(item: $activeDeepLink) { deepLink in
@@ -92,7 +127,7 @@ private struct MainTabView: View {
             consumePendingDeepLink()
         }
     }
-
+    
     @ViewBuilder
     private var selectedView: some View {
         switch selectedTab {
@@ -104,12 +139,12 @@ private struct MainTabView: View {
             ReportView()
         }
     }
-
+    
     private func updateWidgetSnapshot() {
         let snapshot = WidgetSnapshotBuilder.build(recipients: recipients, records: records)
         WidgetSnapshotStore.save(snapshot)
     }
-
+    
     private func consumePendingDeepLink() {
         guard let pendingDeepLink else { return }
         activeDeepLink = pendingDeepLink
@@ -119,7 +154,7 @@ private struct MainTabView: View {
 
 private struct FloatingBottomNavigationBar: View {
     @Binding var selectedTab: MainNavigationTab
-
+    
     var body: some View {
         HStack(spacing: 8) {
             HStack(spacing: 4) {
@@ -155,7 +190,7 @@ private struct FloatingBottomNavigationBar: View {
                     .stroke(Color.white.opacity(0.55), lineWidth: 1)
             }
             .shadow(color: .black.opacity(0.12), radius: 20, x: 0, y: 8)
-
+            
             NavigationLink {
                 RecordingEntryView()
             } label: {
@@ -183,9 +218,9 @@ private enum MainNavigationTab: CaseIterable, Identifiable {
     case home
     case archive
     case report
-
+    
     var id: Self { self }
-
+    
     var title: String {
         switch self {
         case .home:
@@ -196,7 +231,7 @@ private enum MainNavigationTab: CaseIterable, Identifiable {
             "리포트"
         }
     }
-
+    
     var systemImage: String {
         switch self {
         case .home:
@@ -210,9 +245,7 @@ private enum MainNavigationTab: CaseIterable, Identifiable {
 }
 
 // MARK: - 보호자 간 공유/수동 동기화 (CKShare · 커스텀 존 공유)
-// 커스텀 존 하나를 통째로 CKShare로 공유 → 두 보호자가 같이 읽고 씀.
-// owner는 privateCloudDatabase, participant는 sharedCloudDatabase로 접근.
-// CKRecord <-> RecordEntry 사이 다리
+
 struct GuardianRecordData {
     let id: UUID
     let recipientName: String
@@ -228,10 +261,9 @@ enum GuardianSyncManager {
     static let containerID = "iCloud.com.gonn.aico.test"
     static let zoneName = "GuardianSharedZone"
     static let recordType = "GuardianRecord"
-
+    
     static var container: CKContainer { CKContainer(identifier: containerID) }
-
-    // owner: 공유 존을 만들고 그 존 전체에 대한 CKShare 생성 (한 번만)
+    
     static func setupOwnerShare() async throws -> CKShare {
         let zone = CKRecordZone(zoneName: zoneName)
         let savedZone = try await container.privateCloudDatabase.save(zone)
@@ -241,8 +273,7 @@ enum GuardianSyncManager {
         _ = try await container.privateCloudDatabase.modifyRecords(saving: [share], deleting: [])
         return share
     }
-
-    // 내가 owner인지 participant인지 판별 + 알맞은 DB/존. 미설정이면 nil.
+    
     static func resolveTarget() async throws -> (db: CKDatabase, zoneID: CKRecordZone.ID)? {
         let privateZones = try await container.privateCloudDatabase.allRecordZones()
         if let zone = privateZones.first(where: { $0.zoneID.zoneName == zoneName }) {
@@ -254,8 +285,7 @@ enum GuardianSyncManager {
         }
         return nil
     }
-
-    // 내 오늘 기록을 공유 존에 업로드 (.allKeys: 이미 있으면 덮어씀 → 수정분 반영)
+    
     static func push(_ records: [GuardianRecordData]) async throws {
         guard let target = try await resolveTarget() else {
             throw NSError(domain: "GuardianSync", code: 1,
@@ -275,13 +305,21 @@ enum GuardianSyncManager {
         }
         _ = try await target.db.modifyRecords(saving: toSave, deleting: [], savePolicy: .allKeys)
     }
-
-    // 공유 존에서 '오늘' 기록을 모두 읽어옴 (내 것 + 상대 것)
+    
+    static func registerSubscriptionIfNeeded() async {
+        guard let target = try? await resolveTarget() else { return }
+        let subscription = CKDatabaseSubscription(subscriptionID: "guardian-zone-changes")
+        let info = CKSubscription.NotificationInfo()
+        info.shouldSendContentAvailable = true
+        subscription.notificationInfo = info
+        _ = try? await target.db.modifySubscriptions(saving: [subscription], deleting: [])
+    }
+    
     static func pullToday() async throws -> [GuardianRecordData] {
         guard let target = try await resolveTarget() else { return [] }
         let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
         let result = try await target.db.records(matching: query, inZoneWith: target.zoneID)
-
+        
         let calendar = Calendar.current
         var out: [GuardianRecordData] = []
         for (_, recordResult) in result.matchResults {
@@ -301,5 +339,81 @@ enum GuardianSyncManager {
             )
         }
         return out
+    }
+}
+
+// MARK: - 자동 동기화 서비스
+
+@MainActor
+enum GuardianAutoSync {
+    private static var isRunning = false
+    static func sync() async {
+        guard !isRunning else { return }
+        isRunning = true
+        defer { isRunning = false }
+        
+        let context = SwiftDataContainer.shared.mainContext
+        let calendar = Calendar.current
+        let localRecords = (try? context.fetch(FetchDescriptor<RecordEntry>())) ?? []
+        var recipients = (try? context.fetch(FetchDescriptor<RecipientProfile>())) ?? []
+        
+        do {
+            
+            let mine = localRecords.filter { !$0.isRemote && calendar.isDateInToday($0.createdAt) }
+            let payload = mine.map { record in
+                GuardianRecordData(
+                    id: record.id,
+                    recipientName: recipients.first { $0.id == record.recipientId }?.nickname ?? "보호자 공유",
+                    createdAt: record.createdAt,
+                    antecedent: record.antecedentCategories,
+                    behavior: record.behaviorCategories,
+                    consequence: record.consequenceCategories,
+                    note: record.note
+                )
+            }
+            try await GuardianSyncManager.push(payload)
+            
+            let remote = try await GuardianSyncManager.pullToday()
+            for data in remote {
+                if let local = localRecords.first(where: { $0.id == data.id }) {
+                    guard local.isRemote else { continue }
+                    local.recipientId = recipientID(named: data.recipientName, in: &recipients, context: context)
+                    local.createdAt = data.createdAt
+                    local.antecedentCategories = data.antecedent
+                    local.behaviorCategories = data.behavior
+                    local.consequenceCategories = data.consequence
+                    local.note = data.note
+                } else {
+                    let entry = RecordEntry(
+                        id: data.id,
+                        recipientId: recipientID(named: data.recipientName, in: &recipients, context: context),
+                        createdAt: data.createdAt,
+                        antecedentCategories: data.antecedent,
+                        behaviorCategories: data.behavior,
+                        consequenceCategories: data.consequence,
+                        note: data.note
+                    )
+                    entry.isRemote = true
+                    context.insert(entry)
+                }
+            }
+            try? context.save()
+        } catch {
+            print("자동 동기화 실패:", error)
+        }
+    }
+    
+    private static func recipientID(
+        named name: String,
+        in recipients: inout [RecipientProfile],
+        context: ModelContext
+    ) -> UUID {
+        if let existing = recipients.first(where: { $0.nickname == name }) {
+            return existing.id
+        }
+        let profile = RecipientProfile(nickname: name)
+        context.insert(profile)
+        recipients.append(profile)
+        return profile.id
     }
 }
