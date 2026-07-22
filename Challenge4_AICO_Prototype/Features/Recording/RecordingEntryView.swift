@@ -48,7 +48,9 @@ struct RecordingEntryView: View {
            let preferredRecipient = recipients.first(where: { $0.id == preferredRecipientID }) {
             return preferredRecipient
         }
-
+        if let selectedRecipient = recipients.first(where: { $0.id == sessionState.selectedRecipientID }) {
+            return selectedRecipient
+        }
         return recipients.first
     }
 
@@ -95,4 +97,3 @@ struct RecordingEntryView: View {
 #Preview {
     RecordingEntryView()
 }
-

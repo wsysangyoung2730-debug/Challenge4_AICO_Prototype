@@ -13,12 +13,21 @@ struct HomeView: View {
     @State private var isHeroCharacterFloating = false
 
     private var recentRecords: [RecordEntry] {
-        Array(records.prefix(5))
+        Array(selectedRecipientRecords.prefix(5))
+    }
+
+    private var selectedRecipient: RecipientProfile? {
+        recipients.first { $0.id == sessionState.selectedRecipientID } ?? recipients.first
+    }
+
+    private var selectedRecipientRecords: [RecordEntry] {
+        guard let selectedRecipient else { return [] }
+        return records.filter { $0.recipientId == selectedRecipient.id }
     }
 
     private var weeklyRecords: [RecordEntry] {
         let calendar = Calendar.current
-        return records.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .weekOfYear) }
+        return selectedRecipientRecords.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .weekOfYear) }
     }
 
     private var weeklyRecordCount: Int {
@@ -27,11 +36,11 @@ struct HomeView: View {
 
     private var monthlyRecordCount: Int {
         let calendar = Calendar.current
-        return records.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .month) }.count
+        return selectedRecipientRecords.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .month) }.count
     }
 
     private var selectedRecipientName: String {
-        recipients.first?.nickname ?? "카이"
+        selectedRecipient?.nickname ?? "카이"
     }
 
     private var weeklyRecordRecipients: [RecipientProfile] {
@@ -137,31 +146,7 @@ struct HomeView: View {
 
                 Spacer()
 
-                HStack(spacing: 10) {
-                    Button {
-                    } label: {
-                        Image(systemName: "bell")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(.black)
-                            .frame(width: 48, height: 48)
-                            .background(.ultraThinMaterial, in: Circle())
-                            .shadow(color: .black.opacity(0.12), radius: 16, x: 0, y: 8)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("알림")
-
-                    NavigationLink {
-                        SettingsView()
-                    } label: {
-                        Image("AICOLogo")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 48, height: 48)
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("설정")
-                }
+                MainHeaderActions(recipients: recipients)
             }
 
             HStack(alignment: .center) {

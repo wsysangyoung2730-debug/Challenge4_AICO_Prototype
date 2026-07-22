@@ -2,12 +2,25 @@ import SwiftData
 import SwiftUI
 
 struct ReportView: View {
+    @EnvironmentObject private var sessionState: AnonymousSessionState
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
+    @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
     @State private var selectedPeriod: ReportPeriod = .weekly
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AICOTheme.sectionSpacing) {
+                HStack {
+                    Image("AICOStar")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 36, height: 36)
+
+                    Spacer()
+
+                    MainHeaderActions(recipients: recipients)
+                }
+
                 header
 
                 Picker("리포트 기간", selection: $selectedPeriod) {
@@ -25,8 +38,9 @@ struct ReportView: View {
             }
             .padding(AICOTheme.screenPadding)
         }
-        .navigationTitle("리포트")
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .background(AICOTheme.softBackground)
     }
 
@@ -98,11 +112,16 @@ struct ReportView: View {
     }
 
     private var currentRecords: [RecordEntry] {
-        records.filter { selectedPeriod.contains($0.createdAt) }
+        selectedRecipientRecords.filter { selectedPeriod.contains($0.createdAt) }
     }
 
     private var previousPeriodRecords: [RecordEntry] {
-        records.filter { selectedPeriod.containsPreviousPeriod($0.createdAt) }
+        selectedRecipientRecords.filter { selectedPeriod.containsPreviousPeriod($0.createdAt) }
+    }
+
+    private var selectedRecipientRecords: [RecordEntry] {
+        let recipientID = recipients.first { $0.id == sessionState.selectedRecipientID }?.id ?? recipients.first?.id
+        return records.filter { $0.recipientId == recipientID }
     }
 
     private var dailySummaryText: String {
