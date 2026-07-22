@@ -72,12 +72,7 @@ struct SettingsView: View {
             Button {
                 dismiss()
             } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .frame(width: 48, height: 48)
-                    .background(.thinMaterial, in: Circle())
-                    .shadow(color: .black.opacity(0.12), radius: 20, x: 0, y: 8)
+                SettingsHeaderIcon(systemName: "chevron.left")
             }
             .buttonStyle(.plain)
             .accessibilityLabel("뒤로가기")
@@ -446,14 +441,9 @@ private func settingsDetailHeader(
     iconName: String,
     action: @escaping () -> Void
 ) -> some View {
-    VStack(alignment: .leading, spacing: 32) {
+    VStack(alignment: .leading, spacing: 28) {
         Button(action: action) {
-            Image(systemName: iconName)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.primary)
-                .frame(width: 48, height: 48)
-                .background(.thinMaterial, in: Circle())
-                .shadow(color: .black.opacity(0.12), radius: 20, x: 0, y: 8)
+            SettingsHeaderIcon(systemName: iconName)
         }
         .buttonStyle(.plain)
 
@@ -468,6 +458,21 @@ private func settingsDetailHeader(
                     .foregroundStyle(AICOTheme.textGray)
             }
         }
+    }
+}
+
+private struct SettingsHeaderIcon: View {
+    let systemName: String
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundStyle(.primary)
+            .frame(width: 48, height: 48)
+            .background(AICOTheme.cardBackground)
+            .clipShape(Circle())
+            .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 6)
+            .contentShape(Circle())
     }
 }
 
@@ -764,7 +769,7 @@ private struct CategoryManagementView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 74)
+                .padding(.top, 20)
                 .padding(.bottom, 40)
             }
         }
@@ -969,7 +974,7 @@ private struct CategoryEditView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 74)
+                .padding(.top, 20)
                 .padding(.bottom, 112)
             }
 
