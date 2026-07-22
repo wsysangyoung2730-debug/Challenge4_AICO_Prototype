@@ -4,6 +4,7 @@ import PhotosUI
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var sessionState: AnonymousSessionState
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
     @Query(sort: \RecordEntry.createdAt) private var records: [RecordEntry]
@@ -14,42 +15,24 @@ struct SettingsView: View {
     @State private var pendingNotificationValue: Bool?
 
     var body: some View {
-        List {
-            Section("관리") {
-                NavigationLink {
-                    RecipientManagementView()
-                } label: {
-                    SettingsRow(title: "대상자 관리", systemImage: "person.crop.circle")
-                }
+        ZStack {
+            AICOTheme.softBackground.ignoresSafeArea()
 
-                NavigationLink {
-                    CategoryManagementView()
-                } label: {
-                    SettingsRow(title: "기록 카테고리 관리", systemImage: "tag.fill")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    settingsHeader
+                    profileSection
+                    managementSection
+                    appSection
+                    dataSection
                 }
-            }
-
-            Section("알림 설정") {
-                Toggle(isOn: notificationToggleBinding) {
-                    SettingsRow(title: "알림 ON/OFF", systemImage: "bell.fill")
-                }
-
-                Text("프로토타입에서는 앱 내부 설정값만 저장됩니다.")
-                    .font(.footnote)
-                    .foregroundStyle(AICOTheme.textGray)
-            }
-
-            Section("데이터") {
-                Button(role: .destructive) {
-                    showsAppDataResetAlert = true
-                } label: {
-                    SettingsRow(title: "앱 데이터 전체 삭제", systemImage: "trash.fill")
-                }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+                .padding(.bottom, 40)
             }
         }
-        .navigationTitle("설정")
-        .scrollContentBackground(.hidden)
-        .background(AICOTheme.softBackground)
+        .toolbar(.hidden, for: .navigationBar)
+        .navigationBarBackButtonHidden()
         .alert(notificationAlertTitle, isPresented: notificationAlertBinding) {
             Button("취소", role: .cancel) {
                 pendingNotificationValue = nil
@@ -70,6 +53,122 @@ struct SettingsView: View {
             }
         } message: {
             Text("대상자, 기록, 카테고리 등 로컬 프로토타입 데이터가 삭제됩니다. 이 작업은 되돌릴 수 없어요.")
+        }
+    }
+
+    private var selectedRecipient: RecipientProfile? {
+        recipients.first { $0.id == sessionState.selectedRecipientID } ?? recipients.first
+    }
+
+    private var caregiverDisplayName: String {
+        if let selectedRecipient {
+            return "\(selectedRecipient.nickname)맘"
+        }
+        return "아이코 보호자"
+    }
+
+    private var settingsHeader: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            Button {
+                dismiss()
+            } label: {
+                SettingsHeaderIcon(systemName: "chevron.left")
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("뒤로가기")
+
+            Text("설정")
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(.primary)
+        }
+    }
+
+    private var profileSection: some View {
+        SettingsCard {
+            NavigationLink {
+                RecipientManagementView()
+            } label: {
+                SettingsProfileRow(
+                    title: caregiverDisplayName,
+                    subtitle: "부모(모)",
+                    imageName: selectedRecipient?.profileImageName
+                )
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                PrototypePlaceholderView(
+                    title: "새로운 기록 연동",
+                    message: "연동 기능은 이후 보호자 공유와 동기화 단계에서 연결될 예정이에요."
+                )
+            } label: {
+                SettingsNavigationRow(
+                    title: "새로운 기록 연동",
+                    showIcon: false,
+                    showsDivider: false,
+                    notificationCount: nil
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var managementSection: some View {
+        SettingsSection(title: "관리") {
+            NavigationLink {
+                RecipientManagementView()
+            } label: {
+                SettingsNavigationRow(title: "대상자 관리", systemImage: "face.smiling")
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                CategoryManagementView()
+            } label: {
+                SettingsNavigationRow(title: "태그 관리", systemImage: "tag")
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                PrototypePlaceholderView(
+                    title: "보호자 연동 관리",
+                    message: "실제 보호자 연동 기능은 CloudKit 공유 구현 단계에서 연결될 예정이에요."
+                )
+            } label: {
+                SettingsNavigationRow(title: "보호자 연동 관리", systemImage: "person.2", showsDivider: false)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var appSection: some View {
+        SettingsSection(title: "앱") {
+            SettingsToggleRow(
+                title: "알림 ON/OFF",
+                systemImage: "bell",
+                isOn: notificationToggleBinding
+            )
+
+            NavigationLink {
+                PrototypePlaceholderView(
+                    title: "아이코 사용 가이드",
+                    message: "사용 가이드는 이후 온보딩과 도움말 콘텐츠가 정리되면 연결될 예정이에요."
+                )
+            } label: {
+                SettingsNavigationRow(title: "아이코 사용 가이드", systemImage: "questionmark.circle", showsDivider: false)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var dataSection: some View {
+        SettingsSection(title: "데이터") {
+            Button(role: .destructive) {
+                showsAppDataResetAlert = true
+            } label: {
+                SettingsActionRow(title: "앱 데이터 전체 삭제", systemImage: "trash")
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -127,6 +226,270 @@ private struct SettingsRow: View {
 
             Text(title)
         }
+    }
+}
+
+private struct SettingsSection<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.primary)
+
+            SettingsCard {
+                content
+            }
+        }
+    }
+}
+
+private struct SettingsCard<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(spacing: 0) {
+            content
+        }
+        .padding(.horizontal, 16)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 0)
+    }
+}
+
+private struct SettingsProfileRow: View {
+    let title: String
+    let subtitle: String
+    let imageName: String?
+
+    var body: some View {
+        HStack(spacing: 14) {
+            RecipientAvatarView(fileName: imageName, size: 58)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text(subtitle)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(AICOTheme.textGray)
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(AICOTheme.textGray)
+        }
+        .frame(maxWidth: .infinity, minHeight: 82, alignment: .leading)
+        .overlay(alignment: .bottom) {
+            SettingsDivider()
+        }
+    }
+}
+
+private struct SettingsNavigationRow<Content: View>: View {
+    let showIcon: Bool
+    let systemImage: String?
+    let showsDivider: Bool
+    let notificationCount: Int?
+    @ViewBuilder let content: Content
+
+    init(
+        title: String,
+        systemImage: String? = nil,
+        showIcon: Bool = true,
+        showsDivider: Bool = true,
+        notificationCount: Int? = nil
+    ) where Content == Text {
+        self.showIcon = showIcon
+        self.systemImage = systemImage
+        self.showsDivider = showsDivider
+        self.notificationCount = notificationCount
+        self.content = Text(title)
+    }
+
+    init(
+        showIcon: Bool = false,
+        systemImage: String? = nil,
+        showsDivider: Bool = true,
+        notificationCount: Int? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.showIcon = showIcon
+        self.systemImage = systemImage
+        self.showsDivider = showsDivider
+        self.notificationCount = notificationCount
+        self.content = content()
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            if showIcon, let systemImage {
+                Image(systemName: systemImage)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(AICOTheme.primaryOrange)
+                    .frame(width: 22, height: 22)
+            }
+
+            content
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(.primary)
+
+            Spacer(minLength: 8)
+
+            if let notificationCount, notificationCount > 0 {
+                SettingsNotificationBadge(count: notificationCount)
+            }
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(AICOTheme.textGray)
+        }
+        .frame(minHeight: 56)
+        .overlay(alignment: .bottom) {
+            if showsDivider {
+                SettingsDivider()
+            }
+        }
+    }
+}
+
+private struct SettingsNotificationBadge: View {
+    let count: Int
+
+    var body: some View {
+        Text("\(count)")
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .padding(.horizontal, count < 10 ? 0 : 7)
+            .frame(minWidth: 24, minHeight: 24)
+            .background(AICOTheme.primaryOrange)
+            .clipShape(Capsule())
+            .accessibilityLabel("새 알림 \(count)개")
+    }
+}
+
+private struct SettingsToggleRow: View {
+    let title: String
+    let systemImage: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 20, weight: .medium))
+                .foregroundStyle(AICOTheme.primaryOrange)
+                .frame(width: 22, height: 22)
+
+            Text(title)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(.primary)
+
+            Spacer(minLength: 8)
+
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .tint(AICOTheme.primaryOrange)
+        }
+        .frame(minHeight: 56)
+        .overlay(alignment: .bottom) {
+            SettingsDivider()
+        }
+    }
+}
+
+private struct SettingsActionRow: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 20, weight: .medium))
+                .frame(width: 22, height: 22)
+
+            Text(title)
+                .font(.system(size: 18, weight: .medium))
+        }
+        .foregroundStyle(AICOTheme.primaryOrange)
+        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+    }
+}
+
+private struct SettingsDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(Color(red: 0.855, green: 0.855, blue: 0.855))
+            .frame(height: 1)
+    }
+}
+
+private struct PrototypePlaceholderView: View {
+    let title: String
+    let message: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(title)
+                .font(.system(size: 28, weight: .semibold))
+
+            Text(message)
+                .font(.body)
+                .foregroundStyle(AICOTheme.textGray)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(24)
+        .background(AICOTheme.softBackground)
+        .navigationTitle(title)
+    }
+}
+
+private func settingsDetailHeader(
+    title: String,
+    subtitle: String? = nil,
+    iconName: String,
+    action: @escaping () -> Void
+) -> some View {
+    VStack(alignment: .leading, spacing: 28) {
+        Button(action: action) {
+            SettingsHeaderIcon(systemName: iconName)
+        }
+        .buttonStyle(.plain)
+
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(.primary)
+
+            if let subtitle {
+                Text(subtitle)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(AICOTheme.textGray)
+            }
+        }
+    }
+}
+
+private struct SettingsHeaderIcon: View {
+    let systemName: String
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundStyle(.primary)
+            .frame(width: 48, height: 48)
+            .background(AICOTheme.cardBackground)
+            .clipShape(Circle())
+            .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 6)
+            .contentShape(Circle())
     }
 }
 
@@ -389,59 +752,48 @@ private struct RecipientEditView: View {
 
 private struct CategoryManagementView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Query(sort: \RecordCategory.createdAt) private var categories: [RecordCategory]
     @State private var showsResetAlert = false
+    @State private var categoryLimitAlertMessage: String?
+    private let maxCustomCategoriesPerStage = 5
 
     var body: some View {
-        List {
-            Section {
-                Button("카테고리 초기화", role: .destructive) {
-                    showsResetAlert = true
-                }
-            } footer: {
-                Text("기본 카테고리를 다시 준비하고 직접 추가한 카테고리는 삭제합니다.")
-            }
+        ZStack {
+            AICOTheme.softBackground.ignoresSafeArea()
 
-            ForEach(RecordCategoryStage.allCases, id: \.self) { stage in
-                Section(stage.displayTitle) {
-                    NavigationLink {
-                        CategoryEditView(mode: .add(stage))
-                    } label: {
-                        Label("커스텀 카테고리 추가", systemImage: "plus.circle.fill")
-                            .foregroundStyle(AICOTheme.primaryOrange)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 32) {
+                    settingsDetailHeader(
+                        title: "태그 관리",
+                        subtitle: "대상자만을 위한 맞춤 태그를 관리해보세요",
+                        iconName: "chevron.left",
+                        action: { dismiss() }
+                    )
+
+                    ForEach(RecordCategoryStage.allCases, id: \.self) { stage in
+                        categoryStageSection(stage)
                     }
 
-                    let stageCategories = categories
-                        .filter { $0.stage == stage }
-                        .sorted {
-                            if $0.isCustom != $1.isCustom {
-                                return !$0.isCustom
-                            }
-                            return $0.name < $1.name
+                    SettingsCard {
+                        Button(role: .destructive) {
+                            showsResetAlert = true
+                        } label: {
+                            Text("태그 초기화")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(AICOTheme.primaryOrange)
+                                .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
                         }
-
-                    if stageCategories.isEmpty {
-                        Text("아직 카테고리가 없어요. 기록 화면에 들어가면 기본 카테고리가 준비됩니다.")
-                            .foregroundStyle(AICOTheme.textGray)
-                    } else {
-                        ForEach(stageCategories) { category in
-                            if category.isCustom {
-                                NavigationLink {
-                                    CategoryEditView(mode: .edit(category))
-                                } label: {
-                                    categoryRow(category)
-                                }
-                            } else {
-                                categoryRow(category)
-                            }
-                        }
+                        .buttonStyle(.plain)
                     }
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+                .padding(.bottom, 40)
             }
         }
-        .navigationTitle("기록 카테고리")
-        .scrollContentBackground(.hidden)
-        .background(AICOTheme.softBackground)
+        .toolbar(.hidden, for: .navigationBar)
+        .navigationBarBackButtonHidden()
         .alert("기록 카테고리를 초기화할까요?", isPresented: $showsResetAlert) {
             Button("취소", role: .cancel) {}
             Button("초기화", role: .destructive) {
@@ -450,16 +802,129 @@ private struct CategoryManagementView: View {
         } message: {
             Text("직접 추가하거나 수정한 카테고리가 기본값으로 되돌아갈 수 있어요.")
         }
+        .alert("태그 추가 제한", isPresented: categoryLimitAlertBinding) {
+            Button("확인") {
+                categoryLimitAlertMessage = nil
+            }
+        } message: {
+            Text(categoryLimitAlertMessage ?? "")
+        }
     }
 
-    private func categoryRow(_ category: RecordCategory) -> some View {
-        HStack {
-            Text(category.name)
-            Spacer()
-            Text(category.isCustom ? "커스텀" : "기본")
-                .font(.caption)
-                .foregroundStyle(category.isCustom ? AICOTheme.primaryOrange : AICOTheme.textGray)
+    private func categoryStageSection(_ stage: RecordCategoryStage) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(stage.settingsDisplayTitle)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.primary)
+
+            SettingsCard {
+                let stageCategories = categoriesForStage(stage)
+
+                if stageCategories.isEmpty {
+                    Text("아직 태그가 없어요. 기록 화면에 들어가면 기본 태그가 준비됩니다.")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(AICOTheme.textGray)
+                        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+                } else {
+                    ForEach(stageCategories) { category in
+                        categoryRow(category)
+                    }
+                }
+
+                if canAddCategory(for: stage) {
+                    NavigationLink {
+                        CategoryEditView(mode: .add(stage))
+                    } label: {
+                        tagAddRow(stage: stage, isEnabled: true)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Button {
+                        categoryLimitAlertMessage = "각 단계에는 추가 태그를 최대 \(maxCustomCategoriesPerStage)개까지 만들 수 있어요."
+                    } label: {
+                        tagAddRow(stage: stage, isEnabled: false)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
+    }
+
+    @ViewBuilder
+    private func categoryRow(_ category: RecordCategory) -> some View {
+        if category.isCustom {
+            NavigationLink {
+                CategoryEditView(mode: .edit(category))
+            } label: {
+                categoryRowContent(category)
+            }
+            .buttonStyle(.plain)
+        } else {
+            categoryRowContent(category)
+        }
+    }
+
+    private func categoryRowContent(_ category: RecordCategory) -> some View {
+        HStack(spacing: 8) {
+            Text(category.name)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+
+            Spacer(minLength: 8)
+
+            Text(category.isCustom ? "추가됨" : "기본")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(category.isCustom ? AICOTheme.primaryOrange.opacity(0.72) : AICOTheme.textGray)
+        }
+        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+        .overlay(alignment: .bottom) {
+            SettingsDivider()
+        }
+    }
+
+    private func categoriesForStage(_ stage: RecordCategoryStage) -> [RecordCategory] {
+        categories
+            .filter { $0.stage == stage }
+            .sorted {
+                if $0.isCustom != $1.isCustom {
+                    return !$0.isCustom
+                }
+                return $0.createdAt < $1.createdAt
+            }
+    }
+
+    private func tagAddRow(stage: RecordCategoryStage, isEnabled: Bool) -> some View {
+        HStack(spacing: 8) {
+            Text("태그 추가")
+                .font(.system(size: 18, weight: .medium))
+
+            Spacer(minLength: 8)
+
+            Text("\(customCategoryCount(for: stage))/\(maxCustomCategoriesPerStage)")
+                .font(.system(size: 15, weight: .semibold))
+        }
+        .foregroundStyle(isEnabled ? AICOTheme.primaryOrange : AICOTheme.textGray)
+        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+    }
+
+    private func canAddCategory(for stage: RecordCategoryStage) -> Bool {
+        customCategoryCount(for: stage) < maxCustomCategoriesPerStage
+    }
+
+    private func customCategoryCount(for stage: RecordCategoryStage) -> Int {
+        categories.filter { $0.stage == stage && $0.isCustom }.count
+    }
+
+    private var categoryLimitAlertBinding: Binding<Bool> {
+        Binding(
+            get: { categoryLimitAlertMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    categoryLimitAlertMessage = nil
+                }
+            }
+        )
     }
 
     private func resetCategories() {
@@ -508,12 +973,15 @@ private enum CategoryEditMode {
 private struct CategoryEditView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \RecordCategory.createdAt) private var categories: [RecordCategory]
 
     let mode: CategoryEditMode
 
     @State private var name: String
     @State private var validationMessage: String?
     @State private var showsDeleteConfirmation = false
+    private let maxCategoryNameLength = 15
+    private let maxCustomCategoriesPerStage = 5
 
     init(mode: CategoryEditMode) {
         self.mode = mode
@@ -521,34 +989,92 @@ private struct CategoryEditView: View {
     }
 
     var body: some View {
-        Form {
-            Section(mode.stage.displayTitle) {
-                TextField("카테고리 이름", text: $name)
+        ZStack(alignment: .bottom) {
+            AICOTheme.softBackground.ignoresSafeArea()
 
-                if let validationMessage {
-                    Text(validationMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                }
-            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 32) {
+                    settingsDetailHeader(
+                        title: mode.title,
+                        subtitle: "대상자만을 위한 맞춤 태그를 관리해보세요",
+                        iconName: "xmark",
+                        action: { dismiss() }
+                    )
 
-            Section {
-                Button("저장하기") {
-                    save()
-                }
-                .fontWeight(.semibold)
-                .foregroundStyle(AICOTheme.primaryOrange)
-            }
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(mode.stage.settingsDisplayTitle)
+                            .font(.system(size: 18, weight: .semibold))
 
-            if mode.category?.isCustom == true {
-                Section {
-                    Button("커스텀 카테고리 삭제", role: .destructive) {
-                        showsDeleteConfirmation = true
+                        SettingsCard {
+                            TextField("태그명", text: $name)
+                                .font(.system(size: 18, weight: .medium))
+                                .textInputAutocapitalization(.never)
+                                .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+                        }
+
+                        HStack(alignment: .top, spacing: 12) {
+                            if let validationMessage {
+                                Text(validationMessage)
+                                    .font(.footnote)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.red)
+                            } else if mode.category == nil {
+                                Text("추가 태그는 단계별 최대 \(maxCustomCategoriesPerStage)개까지 만들 수 있어요.")
+                                    .font(.footnote)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(AICOTheme.textGray)
+                            }
+
+                            Spacer(minLength: 8)
+
+                            Text("\(min(name.count, maxCategoryNameLength))/\(maxCategoryNameLength)")
+                                .font(.footnote)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(name.count >= maxCategoryNameLength ? AICOTheme.primaryOrange : AICOTheme.textGray)
+                        }
+                    }
+
+                    if mode.category?.isCustom == true {
+                        SettingsCard {
+                            Button(role: .destructive) {
+                                showsDeleteConfirmation = true
+                            } label: {
+                                Text("태그 삭제")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundStyle(AICOTheme.primaryOrange)
+                                    .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+                .padding(.bottom, 112)
             }
+
+            Button {
+                save()
+            } label: {
+                Text(mode.category == nil ? "추가하기" : "저장하기")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(canSave ? .white : AICOTheme.textGray)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(canSave ? AICOTheme.primaryOrange : Color(red: 0.918, green: 0.918, blue: 0.918))
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(!canSave)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
+            .background(AICOTheme.softBackground)
         }
-        .navigationTitle(mode.title)
+        .toolbar(.hidden, for: .navigationBar)
+        .navigationBarBackButtonHidden()
+        .onChange(of: name) {
+            limitCategoryNameLength()
+        }
         .alert("카테고리를 삭제할까요?", isPresented: $showsDeleteConfirmation) {
             Button("취소", role: .cancel) {}
             Button("삭제하기", role: .destructive) {
@@ -559,24 +1085,48 @@ private struct CategoryEditView: View {
         }
     }
 
+    private var trimmedName: String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var canSave: Bool {
+        !trimmedName.isEmpty && canAddCategory
+    }
+
+    private var canAddCategory: Bool {
+        guard mode.category == nil else { return true }
+        return customCategoryCount(for: mode.stage) < maxCustomCategoriesPerStage
+    }
+
+    private func limitCategoryNameLength() {
+        guard name.count > maxCategoryNameLength else { return }
+        name = String(name.prefix(maxCategoryNameLength))
+    }
+
     private func save() {
-        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else {
-            validationMessage = "카테고리 이름을 입력해주세요."
+            validationMessage = "태그명을 입력해주세요."
             return
         }
 
+        guard canAddCategory else {
+            validationMessage = "각 단계에는 추가 태그를 최대 \(maxCustomCategoriesPerStage)개까지 만들 수 있어요."
+            return
+        }
+
+        let normalizedName = String(trimmedName.prefix(maxCategoryNameLength))
+
         if let category = mode.category {
             guard category.isCustom else {
-                validationMessage = "기본 카테고리는 수정하지 않습니다."
+                validationMessage = "기본 태그는 수정하지 않습니다."
                 return
             }
-            category.name = trimmedName
+            category.name = normalizedName
         } else {
             modelContext.insert(
                 RecordCategory(
                     stage: mode.stage,
-                    name: trimmedName,
+                    name: normalizedName,
                     isCustom: true
                 )
             )
@@ -584,6 +1134,10 @@ private struct CategoryEditView: View {
 
         try? modelContext.save()
         dismiss()
+    }
+
+    private func customCategoryCount(for stage: RecordCategoryStage) -> Int {
+        categories.filter { $0.stage == stage && $0.isCustom }.count
     }
 
     private func deleteCategory() {
@@ -623,6 +1177,14 @@ private extension RecordCategoryStage {
         case .antecedent: "[A단계] 상황"
         case .behavior: "[B단계] 행동"
         case .consequence: "[C단계] 대응/결과"
+        }
+    }
+
+    var settingsDisplayTitle: String {
+        switch self {
+        case .antecedent: "A. 선행 상황"
+        case .behavior: "B. 행동 관찰"
+        case .consequence: "C. 보호자 대응"
         }
     }
 }
