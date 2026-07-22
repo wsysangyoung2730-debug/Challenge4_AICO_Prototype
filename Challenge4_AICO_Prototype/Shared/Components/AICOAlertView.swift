@@ -20,7 +20,7 @@ struct AICOAlertView: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.48)
+            Color.black.opacity(0.42)
                 .ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 26) {
@@ -43,12 +43,12 @@ struct AICOAlertView: View {
             .padding(.top, 28)
             .padding(.bottom, 18)
             .frame(maxWidth: 304, alignment: .leading)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 36, style: .continuous))
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 36, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 36, style: .continuous)
-                    .stroke(Color.white.opacity(0.72), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.82), lineWidth: 1)
             }
-            .shadow(color: .black.opacity(0.18), radius: 28, x: 0, y: 18)
+            .shadow(color: .black.opacity(0.16), radius: 30, x: 0, y: 18)
             .padding(.horizontal, 48)
         }
         .transition(.opacity.combined(with: .scale(scale: 0.96)))
