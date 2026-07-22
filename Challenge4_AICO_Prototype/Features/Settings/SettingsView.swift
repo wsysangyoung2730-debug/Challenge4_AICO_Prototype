@@ -75,7 +75,7 @@ struct SettingsView: View {
                 resetLocalData()
             }
         } message: {
-            Text("대상자, 기록, 카테고리 등 로컬 프로토타입 데이터가 삭제됩니다. 이 작업은 되돌릴 수 없어요.")
+            Text("대상자, 기록, 카테고리가 이 기기에서 삭제되고, 내가 공유한 기록은 상대 기기에서도 사라져요. 이 작업은 되돌릴 수 없어요.")
         }
     }
 
@@ -108,6 +108,9 @@ struct SettingsView: View {
     }
 
     private func resetLocalData() {
+        let myUploadedIDs = records.filter { !$0.isRemote }.map(\.id)
+        Task { await GuardianSyncManager.deleteRecords(ids: myUploadedIDs) }
+
         records.flatMap(\.attachmentNames).forEach { ImageStorageService.deleteImage(named: $0) }
         recipients.map(\.profileImageName).forEach { ImageStorageService.deleteImage(named: $0) }
         records.forEach(modelContext.delete)

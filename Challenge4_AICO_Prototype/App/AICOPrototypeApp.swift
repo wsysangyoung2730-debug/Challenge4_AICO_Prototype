@@ -380,6 +380,13 @@ enum GuardianSyncManager {
         _ = try? await target.db.modifySubscriptions(saving: [subscription], deleting: [])
     }
     
+    /// 주어진 기록 id들 공유 존 삭제
+    static func deleteRecords(ids: [UUID]) async {
+        guard !ids.isEmpty, let target = try? await resolveTarget() else { return }
+        let recordIDs = ids.map { CKRecord.ID(recordName: $0.uuidString, zoneID: target.zoneID) }
+        _ = try? await target.db.modifyRecords(saving: [], deleting: recordIDs)
+    }
+
     static func pullToday() async throws -> [GuardianRecordData] {
         guard let target = try await resolveTarget() else { return [] }
         let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
