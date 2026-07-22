@@ -62,6 +62,8 @@ struct MockCaregiverSharingRoom: Identifiable {
 }
 
 struct CaregiverSharingSettingsView: View {
+    @ObservedObject private var syncStatus = GuardianSyncStatus.shared
+    @State private var showsDisconnectAlert = false
     @State private var sharingState: CaregiverSharingState = .notStarted
     @State private var adminRoom = MockCaregiverSharingRoom.adminPreview
     @State private var joinedRoom = MockCaregiverSharingRoom.joinedPreview
@@ -70,6 +72,7 @@ struct CaregiverSharingSettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
+                connectionBanner
 
                 switch sharingState {
                 case .notStarted:
@@ -79,6 +82,8 @@ struct CaregiverSharingSettingsView: View {
                 case .joinedRoom:
                     roomListContent(room: $joinedRoom, role: .invited)
                 }
+
+                disconnectSection
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 24)
@@ -86,6 +91,57 @@ struct CaregiverSharingSettingsView: View {
         .navigationTitle("보호자 공유 설정")
         .navigationBarTitleDisplayMode(.inline)
         .background(AICOTheme.softBackground)
+        .alert("공유 연결을 끊을까요?", isPresented: $showsDisconnectAlert) {
+            Button("취소", role: .cancel) {}
+            Button("연결 끊기", role: .destructive) {
+                Task {
+                    await GuardianAutoSync.disconnectAndReset()
+                    sharingState = .notStarted
+                }
+            }
+        } message: {
+            Text("공유방과 서버의 공유 기록이 삭제되고, 받아온 기록도 이 기기에서 지워져요. 내가 쓴 기록은 남습니다.")
+        }
+    }
+
+    private var connectionBanner: some View {
+        HStack(spacing: 10) {
+            Circle()
+                .fill(syncStatus.isConnected ? Color.green : AICOTheme.textGray.opacity(0.5))
+                .frame(width: 10, height: 10)
+
+            Text(syncStatus.isConnected ? "다른 보호자와 연결됨" : "아직 연결되지 않았어요")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.black)
+
+            Spacer()
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 12, x: 0, y: 0)
+        .task { await GuardianAutoSync.sync() }
+    }
+
+    private var disconnectSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button(role: .destructive) {
+                showsDisconnectAlert = true
+            } label: {
+                Text("공유 연결 끊기")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            Text("연결을 끊으면 공유방과 서버에 올라간 공유 기록이 삭제되고, 상대에게서 받아온 기록도 이 기기에서 지워져요. 내가 직접 쓴 기록은 그대로 남아요.")
+                .font(.footnote)
+                .foregroundStyle(AICOTheme.textGray)
+                .lineSpacing(3)
+        }
     }
 
     private var header: some View {
@@ -94,7 +150,7 @@ struct CaregiverSharingSettingsView: View {
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(.black)
 
-            Text("현재 화면은 CloudKit 공유 기능을 준비하기 위한 프로토타입 UI예요. 실제 초대, 동기화, 원격 데이터 변경은 아직 실행하지 않습니다.")
+            Text("초대 링크를 보내 다른 보호자를 연결하면, 서로의 오늘 기록이 자동으로 공유돼요.")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(AICOTheme.darkGray)
                 .lineSpacing(3)
@@ -179,7 +235,7 @@ struct CaregiverInviteView: View {
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(.black)
 
-                    Text("버튼을 누르면 초대창이 떠요. 메시지·메일 또는 '링크 복사'로 상대에게 보내면, 상대가 링크를 눌러 수락합니다.")
+                    Text("버튼을 누르면 초대창이 떠요. '링크 복사'로 링크를 복사한 뒤 메시지·카카오톡 등으로 상대에게 보내면, 상대가 링크를 눌러 참여합니다.")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(AICOTheme.darkGray)
                         .lineSpacing(3)
@@ -205,7 +261,7 @@ struct CaregiverInviteView: View {
                 .background(.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .shadow(color: .black.opacity(0.05), radius: 12, x: 0, y: 0)
 
-                Text("연결이 끝나면 홈 화면의 '동기화' 버튼으로 서로의 오늘 기록을 주고받아요.")
+                Text("연결이 끝나면 서로의 오늘 기록이 자동으로 반영돼요. 따로 버튼을 누르지 않아도 됩니다.")
                     .font(.footnote)
                     .foregroundStyle(AICOTheme.textGray)
                     .lineSpacing(3)
@@ -491,14 +547,13 @@ private extension MockCaregiverSharingRoom {
     }
 }
 
-// UICloudSharingController를 SwiftUI에서 쓰기 위한 래퍼 (초대 UI)
 private struct CloudSharingView: UIViewControllerRepresentable {
     let share: CKShare
     let container: CKContainer
 
     func makeUIViewController(context: Context) -> UICloudSharingController {
         let controller = UICloudSharingController(share: share, container: container)
-        controller.availablePermissions = [.allowReadWrite, .allowPrivate]
+        controller.availablePermissions = [.allowReadWrite, .allowPublic, .allowPrivate]
         controller.delegate = context.coordinator
         return controller
     }

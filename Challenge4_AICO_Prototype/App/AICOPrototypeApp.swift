@@ -31,6 +31,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     
     func application(
         _ application: UIApplication,
+        configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        let configuration = UISceneConfiguration(
+            name: nil,
+            sessionRole: connectingSceneSession.role
+        )
+        configuration.delegateClass = SceneDelegate.self
+        return configuration
+    }
+    
+    func application(
+        _ application: UIApplication,
         userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata
     ) {
         let container = CKContainer(identifier: GuardianSyncManager.containerID)
@@ -64,6 +77,38 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
         print("원격 알림 등록 실패:", error)
+    }
+}
+
+final class SceneDelegate: NSObject, UIWindowSceneDelegate {
+    func windowScene(
+        _ windowScene: UIWindowScene,
+        userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata
+    ) {
+        Task { @MainActor in
+            GuardianSyncStatus.shared.message = "공유 수락 처리 중…"
+        }
+        
+        let container = CKContainer(identifier: GuardianSyncManager.containerID)
+        let operation = CKAcceptSharesOperation(shareMetadatas: [cloudKitShareMetadata])
+        operation.perShareResultBlock = { _, result in
+            if case let .failure(error) = result {
+                print("공유 수락 실패:", error)
+            }
+        }
+        operation.acceptSharesResultBlock = { result in
+            Task { @MainActor in
+                if case .failure = result {
+                    GuardianSyncStatus.shared.message = "초대 수락에 실패했어요. 링크를 다시 열어보세요."
+                    return
+                }
+                GuardianSyncStatus.shared.isConnected = true
+                GuardianSyncStatus.shared.message = "연결됐어요"
+                await GuardianSyncManager.registerSubscriptionIfNeeded()
+                await GuardianAutoSync.sync()
+            }
+        }
+        container.add(operation)
     }
 }
 
@@ -265,23 +310,36 @@ enum GuardianSyncManager {
     static var container: CKContainer { CKContainer(identifier: containerID) }
     
     static func setupOwnerShare() async throws -> CKShare {
+        let db = container.privateCloudDatabase
         let zone = CKRecordZone(zoneName: zoneName)
-        let savedZone = try await container.privateCloudDatabase.save(zone)
+        let savedZone = try await db.save(zone)
+        
+        // 중복 생성 방지 + URL 있는 버전 사용
+        let existingShareID = CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: savedZone.zoneID)
+        if let existing = try? await db.record(for: existingShareID) as? CKShare, existing.url != nil {
+            return existing
+        }
+        
         let share = CKShare(recordZoneID: savedZone.zoneID)
         share[CKShare.SystemFieldKey.title] = "AICO 보호자 공유" as CKRecordValue
-        share.publicPermission = .none
-        _ = try await container.privateCloudDatabase.modifyRecords(saving: [share], deleting: [])
+        share.publicPermission = .readWrite
+        
+        let result = try await db.modifyRecords(saving: [share], deleting: [])
+        if case let .success(saved)? = result.saveResults[share.recordID],
+           let savedShare = saved as? CKShare {
+            return savedShare
+        }
         return share
     }
     
     static func resolveTarget() async throws -> (db: CKDatabase, zoneID: CKRecordZone.ID)? {
-        let privateZones = try await container.privateCloudDatabase.allRecordZones()
-        if let zone = privateZones.first(where: { $0.zoneID.zoneName == zoneName }) {
-            return (container.privateCloudDatabase, zone.zoneID)
-        }
         let sharedZones = try await container.sharedCloudDatabase.allRecordZones()
         if let zone = sharedZones.first(where: { $0.zoneID.zoneName == zoneName }) {
             return (container.sharedCloudDatabase, zone.zoneID)
+        }
+        let privateZones = try await container.privateCloudDatabase.allRecordZones()
+        if let zone = privateZones.first(where: { $0.zoneID.zoneName == zoneName }) {
+            return (container.privateCloudDatabase, zone.zoneID)
         }
         return nil
     }
@@ -304,6 +362,13 @@ enum GuardianSyncManager {
             return record
         }
         _ = try await target.db.modifyRecords(saving: toSave, deleting: [], savePolicy: .allKeys)
+    }
+    
+    static func resetSharing() async throws {
+        let privateZones = try await container.privateCloudDatabase.allRecordZones()
+        if let zone = privateZones.first(where: { $0.zoneID.zoneName == zoneName }) {
+            _ = try await container.privateCloudDatabase.modifyRecordZones(saving: [], deleting: [zone.zoneID])
+        }
     }
     
     static func registerSubscriptionIfNeeded() async {
@@ -344,6 +409,15 @@ enum GuardianSyncManager {
 
 // MARK: - 자동 동기화 서비스
 
+// 보호자 공유 연결/동기화 상태
+@MainActor
+final class GuardianSyncStatus: ObservableObject {
+    static let shared = GuardianSyncStatus()
+    @Published var message: String = "연결 상태 확인 중…"
+    @Published var isConnected: Bool = false
+    private init() {}
+}
+
 @MainActor
 enum GuardianAutoSync {
     private static var isRunning = false
@@ -352,10 +426,19 @@ enum GuardianAutoSync {
         isRunning = true
         defer { isRunning = false }
         
+        let status = GuardianSyncStatus.shared
+        
         let context = SwiftDataContainer.shared.mainContext
         let calendar = Calendar.current
         let localRecords = (try? context.fetch(FetchDescriptor<RecordEntry>())) ?? []
         var recipients = (try? context.fetch(FetchDescriptor<RecipientProfile>())) ?? []
+        
+        guard (try? await GuardianSyncManager.resolveTarget()) != nil else {
+            status.isConnected = false
+            status.message = "아직 연결되지 않았어요"
+            return
+        }
+        status.isConnected = true
         
         do {
             
@@ -374,9 +457,12 @@ enum GuardianAutoSync {
             try await GuardianSyncManager.push(payload)
             
             let remote = try await GuardianSyncManager.pullToday()
+            var added = 0
+            var updated = 0
             for data in remote {
                 if let local = localRecords.first(where: { $0.id == data.id }) {
                     guard local.isRemote else { continue }
+                    updated += 1
                     local.recipientId = recipientID(named: data.recipientName, in: &recipients, context: context)
                     local.createdAt = data.createdAt
                     local.antecedentCategories = data.antecedent
@@ -395,12 +481,30 @@ enum GuardianAutoSync {
                     )
                     entry.isRemote = true
                     context.insert(entry)
+                    added += 1
                 }
             }
             try? context.save()
+            status.message = "연결됨 · 방금 동기화했어요"
+            _ = (added, updated)
         } catch {
             print("자동 동기화 실패:", error)
+            status.message = "동기화에 실패했어요. 잠시 후 다시 시도돼요."
         }
+    }
+    /// 내가 직접 쓴 기록은 삭제X
+    static func disconnectAndReset() async {
+        let status = GuardianSyncStatus.shared
+        status.message = "연결을 끊는 중…"
+        
+        try? await GuardianSyncManager.resetSharing()
+        let context = SwiftDataContainer.shared.mainContext
+        let received = ((try? context.fetch(FetchDescriptor<RecordEntry>())) ?? []).filter(\.isRemote)
+        received.forEach(context.delete)
+        try? context.save()
+        
+        status.isConnected = false
+        status.message = "연결이 해제됐어요"
     }
     
     private static func recipientID(
