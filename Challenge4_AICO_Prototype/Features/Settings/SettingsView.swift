@@ -738,6 +738,8 @@ private struct CategoryManagementView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \RecordCategory.createdAt) private var categories: [RecordCategory]
     @State private var showsResetAlert = false
+    @State private var categoryLimitAlertMessage: String?
+    private let maxCustomCategoriesPerStage = 5
 
     var body: some View {
         ZStack {
@@ -783,6 +785,13 @@ private struct CategoryManagementView: View {
         } message: {
             Text("직접 추가하거나 수정한 카테고리가 기본값으로 되돌아갈 수 있어요.")
         }
+        .alert("태그 추가 제한", isPresented: categoryLimitAlertBinding) {
+            Button("확인") {
+                categoryLimitAlertMessage = nil
+            }
+        } message: {
+            Text(categoryLimitAlertMessage ?? "")
+        }
     }
 
     private func categoryStageSection(_ stage: RecordCategoryStage) -> some View {
@@ -805,15 +814,21 @@ private struct CategoryManagementView: View {
                     }
                 }
 
-                NavigationLink {
-                    CategoryEditView(mode: .add(stage))
-                } label: {
-                    Text("태그 추가")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(AICOTheme.primaryOrange)
-                        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+                if canAddCategory(for: stage) {
+                    NavigationLink {
+                        CategoryEditView(mode: .add(stage))
+                    } label: {
+                        tagAddRow(stage: stage, isEnabled: true)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Button {
+                        categoryLimitAlertMessage = "각 단계에는 추가 태그를 최대 \(maxCustomCategoriesPerStage)개까지 만들 수 있어요."
+                    } label: {
+                        tagAddRow(stage: stage, isEnabled: false)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -843,13 +858,7 @@ private struct CategoryManagementView: View {
 
             Text(category.isCustom ? "추가됨" : "기본")
                 .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(AICOTheme.textGray)
-
-            if !category.isCustom {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(AICOTheme.textGray)
-            }
+                .foregroundStyle(category.isCustom ? AICOTheme.primaryOrange.opacity(0.72) : AICOTheme.textGray)
         }
         .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
         .overlay(alignment: .bottom) {
@@ -866,6 +875,39 @@ private struct CategoryManagementView: View {
                 }
                 return $0.createdAt < $1.createdAt
             }
+    }
+
+    private func tagAddRow(stage: RecordCategoryStage, isEnabled: Bool) -> some View {
+        HStack(spacing: 8) {
+            Text("태그 추가")
+                .font(.system(size: 18, weight: .medium))
+
+            Spacer(minLength: 8)
+
+            Text("\(customCategoryCount(for: stage))/\(maxCustomCategoriesPerStage)")
+                .font(.system(size: 15, weight: .semibold))
+        }
+        .foregroundStyle(isEnabled ? AICOTheme.primaryOrange : AICOTheme.textGray)
+        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+    }
+
+    private func canAddCategory(for stage: RecordCategoryStage) -> Bool {
+        customCategoryCount(for: stage) < maxCustomCategoriesPerStage
+    }
+
+    private func customCategoryCount(for stage: RecordCategoryStage) -> Int {
+        categories.filter { $0.stage == stage && $0.isCustom }.count
+    }
+
+    private var categoryLimitAlertBinding: Binding<Bool> {
+        Binding(
+            get: { categoryLimitAlertMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    categoryLimitAlertMessage = nil
+                }
+            }
+        )
     }
 
     private func resetCategories() {
@@ -914,6 +956,7 @@ private enum CategoryEditMode {
 private struct CategoryEditView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \RecordCategory.createdAt) private var categories: [RecordCategory]
 
     let mode: CategoryEditMode
 
@@ -921,6 +964,7 @@ private struct CategoryEditView: View {
     @State private var validationMessage: String?
     @State private var showsDeleteConfirmation = false
     private let maxCategoryNameLength = 15
+    private let maxCustomCategoriesPerStage = 5
 
     init(mode: CategoryEditMode) {
         self.mode = mode
@@ -951,11 +995,25 @@ private struct CategoryEditView: View {
                                 .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
                         }
 
-                        if let validationMessage {
-                            Text(validationMessage)
+                        HStack(alignment: .top, spacing: 12) {
+                            if let validationMessage {
+                                Text(validationMessage)
+                                    .font(.footnote)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.red)
+                            } else if mode.category == nil {
+                                Text("추가 태그는 단계별 최대 \(maxCustomCategoriesPerStage)개까지 만들 수 있어요.")
+                                    .font(.footnote)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(AICOTheme.textGray)
+                            }
+
+                            Spacer(minLength: 8)
+
+                            Text("\(min(name.count, maxCategoryNameLength))/\(maxCategoryNameLength)")
                                 .font(.footnote)
                                 .fontWeight(.semibold)
-                                .foregroundStyle(.red)
+                                .foregroundStyle(name.count >= maxCategoryNameLength ? AICOTheme.primaryOrange : AICOTheme.textGray)
                         }
                     }
 
@@ -1015,7 +1073,12 @@ private struct CategoryEditView: View {
     }
 
     private var canSave: Bool {
-        !trimmedName.isEmpty
+        !trimmedName.isEmpty && canAddCategory
+    }
+
+    private var canAddCategory: Bool {
+        guard mode.category == nil else { return true }
+        return customCategoryCount(for: mode.stage) < maxCustomCategoriesPerStage
     }
 
     private func limitCategoryNameLength() {
@@ -1026,6 +1089,11 @@ private struct CategoryEditView: View {
     private func save() {
         guard !trimmedName.isEmpty else {
             validationMessage = "태그명을 입력해주세요."
+            return
+        }
+
+        guard canAddCategory else {
+            validationMessage = "각 단계에는 추가 태그를 최대 \(maxCustomCategoriesPerStage)개까지 만들 수 있어요."
             return
         }
 
@@ -1049,6 +1117,10 @@ private struct CategoryEditView: View {
 
         try? modelContext.save()
         dismiss()
+    }
+
+    private func customCategoryCount(for stage: RecordCategoryStage) -> Int {
+        categories.filter { $0.stage == stage && $0.isCustom }.count
     }
 
     private func deleteCategory() {
