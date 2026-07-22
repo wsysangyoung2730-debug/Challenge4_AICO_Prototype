@@ -67,6 +67,37 @@ struct ABCRecordingFlowView: View {
             if showsRecipientSelector {
                 recipientSelectorOverlay
             }
+
+            if showsCompletionAlert {
+                AICOAlertView(
+                    title: "기록이 저장되었어요",
+                    message: "저장된 기록은 기록 보관함에서 확인할 수 있어요.",
+                    actions: [
+                        AICOAlertAction(title: "확인") {
+                            showsCompletionAlert = false
+                            dismiss()
+                        }
+                    ]
+                )
+                .zIndex(2)
+            }
+
+            if showsExitAlert {
+                AICOAlertView(
+                    title: "기록 작성을 그만둘까요?",
+                    message: "지금 나가면 작성 중인 내용은 저장되지 않아요.",
+                    actions: [
+                        AICOAlertAction(title: "이어서 기록하기") {
+                            showsExitAlert = false
+                        },
+                        AICOAlertAction(title: "나가기", style: .destructive) {
+                            showsExitAlert = false
+                            discardDraftAndDismiss()
+                        }
+                    ]
+                )
+                .zIndex(2)
+            }
         }
         .background(AICOTheme.softBackground)
         .tint(AICOTheme.primaryOrange)
@@ -82,14 +113,6 @@ struct ABCRecordingFlowView: View {
         .sheet(isPresented: $showsDatePicker) {
             datePickerSheet
         }
-        .alert("기록을 중단할까요?", isPresented: $showsExitAlert) {
-            Button("계속 작성하기", role: .cancel) {}
-            Button("나가기", role: .destructive) {
-                discardDraftAndDismiss()
-            }
-        } message: {
-            Text("지금 나가면 작성 중인 기록이 모두 삭제됩니다.")
-        }
         .alert("카테고리 추가", isPresented: categoryInputBinding) {
             TextField("새 카테고리 이름", text: $newCategoryName)
 
@@ -103,13 +126,6 @@ struct ABCRecordingFlowView: View {
             }
         } message: {
             Text("현재 단계에 맞는 항목으로 저장됩니다.")
-        }
-        .alert("기록이 저장되었어요", isPresented: $showsCompletionAlert) {
-            Button("확인") {
-                dismiss()
-            }
-        } message: {
-            Text("저장된 기록은 기록 보관함에서 확인할 수 있어요.")
         }
     }
 
@@ -125,7 +141,7 @@ struct ABCRecordingFlowView: View {
                 if stepIndex > 0 {
                     stepIndex -= 1
                 } else {
-                    discardDraftAndDismiss()
+                    requestExit()
                 }
             } label: {
                 Image(systemName: "chevron.left")
@@ -516,6 +532,16 @@ struct ABCRecordingFlowView: View {
         true
     }
 
+    private var hasDraftContent: Bool {
+        !selectedAntecedents.isEmpty
+            || !selectedBehaviors.isEmpty
+            || !selectedConsequences.isEmpty
+            || !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || !attachmentNames.isEmpty
+            || hasSharedPhotoAttachment
+            || stepIndex > 0
+    }
+
     private func handleRecipientSwitcherTap() {
         showsRecipientSelector = true
     }
@@ -656,6 +682,14 @@ struct ABCRecordingFlowView: View {
         hasSharedPhotoAttachment = false
         validationMessage = nil
         showsCompletionAlert = false
+    }
+
+    private func requestExit() {
+        if hasDraftContent {
+            showsExitAlert = true
+        } else {
+            discardDraftAndDismiss()
+        }
     }
 
     private func discardDraftAndDismiss() {
