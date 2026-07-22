@@ -102,22 +102,12 @@ struct SettingsView: View {
                     message: "연동 기능은 이후 보호자 공유와 동기화 단계에서 연결될 예정이에요."
                 )
             } label: {
-                SettingsNavigationRow(showIcon: false, showsDivider: false) {
-                    HStack(spacing: 8) {
-                        Text("새로운 기록 연동")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(.primary)
-
-                        Spacer(minLength: 8)
-
-                        Text("1")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 24, height: 24)
-                            .background(AICOTheme.primaryOrange)
-                            .clipShape(Circle())
-                    }
-                }
+                SettingsNavigationRow(
+                    title: "새로운 기록 연동",
+                    showIcon: false,
+                    showsDivider: false,
+                    notificationCount: nil
+                )
             }
             .buttonStyle(.plain)
         }
@@ -307,16 +297,20 @@ private struct SettingsNavigationRow<Content: View>: View {
     let showIcon: Bool
     let systemImage: String?
     let showsDivider: Bool
+    let notificationCount: Int?
     @ViewBuilder let content: Content
 
     init(
         title: String,
-        systemImage: String,
-        showsDivider: Bool = true
+        systemImage: String? = nil,
+        showIcon: Bool = true,
+        showsDivider: Bool = true,
+        notificationCount: Int? = nil
     ) where Content == Text {
-        self.showIcon = true
+        self.showIcon = showIcon
         self.systemImage = systemImage
         self.showsDivider = showsDivider
+        self.notificationCount = notificationCount
         self.content = Text(title)
     }
 
@@ -324,11 +318,13 @@ private struct SettingsNavigationRow<Content: View>: View {
         showIcon: Bool = false,
         systemImage: String? = nil,
         showsDivider: Bool = true,
+        notificationCount: Int? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.showIcon = showIcon
         self.systemImage = systemImage
         self.showsDivider = showsDivider
+        self.notificationCount = notificationCount
         self.content = content()
     }
 
@@ -347,6 +343,10 @@ private struct SettingsNavigationRow<Content: View>: View {
 
             Spacer(minLength: 8)
 
+            if let notificationCount, notificationCount > 0 {
+                SettingsNotificationBadge(count: notificationCount)
+            }
+
             Image(systemName: "chevron.right")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(AICOTheme.textGray)
@@ -357,6 +357,23 @@ private struct SettingsNavigationRow<Content: View>: View {
                 SettingsDivider()
             }
         }
+    }
+}
+
+private struct SettingsNotificationBadge: View {
+    let count: Int
+
+    var body: some View {
+        Text("\(count)")
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .padding(.horizontal, count < 10 ? 0 : 7)
+            .frame(minWidth: 24, minHeight: 24)
+            .background(AICOTheme.primaryOrange)
+            .clipShape(Capsule())
+            .accessibilityLabel("새 알림 \(count)개")
     }
 }
 
