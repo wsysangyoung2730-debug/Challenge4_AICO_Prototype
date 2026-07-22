@@ -34,5 +34,5 @@ struct HomeInfoFeedItem: Identifiable, Hashable {
     let summary: String
     let detail: String
     let systemImage: String
-    let url: URL
+    let url: URL?
 }

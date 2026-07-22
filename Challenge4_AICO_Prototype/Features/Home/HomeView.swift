@@ -3,12 +3,14 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var sessionState: AnonymousSessionState
+    @Environment(\.openURL) private var openURL
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
 
     @State private var isHeroGreetingVisible = false
     @State private var isHeroCharacterVisible = false
     @State private var isHeroCharacterFloating = false
+    @State private var showsComingSoonAlert = false
 
     private var recentRecords: [RecordEntry] {
         Array(selectedRecipientRecords.prefix(5))
@@ -25,7 +27,9 @@ struct HomeView: View {
 
     private var weeklyRecords: [RecordEntry] {
         let calendar = Calendar.current
-        return selectedRecipientRecords.filter { calendar.isDate($0.createdAt, equalTo: Date(), toGranularity: .weekOfYear) }
+        return selectedRecipientRecords.filter {
+            calendar.isDate($0.effectiveRecordDate, equalTo: Date(), toGranularity: .weekOfYear)
+        }
     }
 
     private var weeklyRecordCount: Int {
@@ -42,7 +46,9 @@ struct HomeView: View {
             summary: "아이코",
             detail: "A는 행동 전 상황, B는 관찰된 행동이나 신호, C는 이후 대응과 결과를 뜻합니다. AICO는 이 흐름을 보호자가 부담 없이 정리할 수 있게 돕는 방향으로 설계하고 있습니다.",
             systemImage: "pencil",
-            url: Self.informationFeedURL
+            url: URL(
+                string: "https://neurodivergencewales.org/en/parents-carers/information-for-an-autistic-child/advice-sheets/using-an-abc-chart-to-identify-triggers-of-challenging-behaviours-in-children-with-autism/"
+            )
         ),
         HomeInfoFeedItem(
             title: "우리 아이의 행동 잘 관찰하기",
@@ -56,7 +62,7 @@ struct HomeView: View {
             summary: "아이코",
             detail: "상담 전 최근 기록을 돌아보면 상황, 행동, 대응을 더 구체적으로 설명할 수 있습니다. 민감한 정보가 포함될 수 있으니 공유 범위는 신중히 확인해주세요.",
             systemImage: "clipboard",
-            url: Self.informationFeedURL
+            url: nil
         )
     ]
 
@@ -95,6 +101,11 @@ struct HomeView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        .alert("준비 중이에요", isPresented: $showsComingSoonAlert) {
+            Button("확인", role: .cancel) {}
+        } message: {
+            Text("해당 정보는 곧 제공될 예정입니다.")
+        }
     }
 
     private var headerSection: some View {
@@ -256,8 +267,7 @@ struct HomeView: View {
 
                 ReportCategoryCard(
                     title: "대표 선행 상황",
-                    items: topItems(in: weeklyRecords.flatMap(\.antecedentCategories)),
-                    height: 99
+                    items: topItems(in: weeklyRecords.flatMap(\.antecedentCategories))
                 )
 
                 ReportCategoryCard(
@@ -265,8 +275,7 @@ struct HomeView: View {
                     items: topItems(
                         in: weeklyRecords.flatMap(\.behaviorCategories)
                             + weeklyRecords.flatMap(\.consequenceCategories)
-                    ),
-                    height: 141
+                    )
                 )
             }
             .padding(8)
@@ -285,7 +294,13 @@ struct HomeView: View {
 
             VStack(spacing: 12) {
                 ForEach(feedItems) { item in
-                    Link(destination: item.url) {
+                    Button {
+                        if let url = item.url {
+                            openURL(url)
+                        } else {
+                            showsComingSoonAlert = true
+                        }
+                    } label: {
                         HomeInfoFeedCard(item: item)
                     }
                     .buttonStyle(.plain)
@@ -521,7 +536,7 @@ private struct RecentRecordPreviewCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(record.createdAt.formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
+                Text(HomeRecordDateFormatter.string(from: record.effectiveRecordDate))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(AICOTheme.textGray)
                     .lineLimit(1)
@@ -657,7 +672,6 @@ private struct SatisfactionCard: View {
 private struct ReportCategoryCard: View {
     let title: String
     let items: [String]
-    let height: CGFloat
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -680,7 +694,7 @@ private struct ReportCategoryCard: View {
             }
         }
         .padding(16)
-        .frame(maxWidth: .infinity, minHeight: height, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -691,6 +705,20 @@ private struct ReportCategoryCard: View {
     private var displayItems: [String] {
         items.isEmpty ? ["기록 대기"] : items
     }
+}
+
+private enum HomeRecordDateFormatter {
+    static func string(from date: Date) -> String {
+        formatter.string(from: date)
+    }
+
+    private static let formatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "yyyy. MM. dd"
+        return formatter
+    }()
 }
 
 private struct HomeInfoFeedCard: View {
