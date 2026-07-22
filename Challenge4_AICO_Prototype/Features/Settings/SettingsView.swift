@@ -19,7 +19,7 @@ struct SettingsView: View {
             AICOTheme.softBackground.ignoresSafeArea()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 32) {
+                VStack(alignment: .leading, spacing: 28) {
                     settingsHeader
                     profileSection
                     managementSection
@@ -27,7 +27,7 @@ struct SettingsView: View {
                     dataSection
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 74)
+                .padding(.top, 20)
                 .padding(.bottom, 40)
             }
         }
@@ -68,7 +68,7 @@ struct SettingsView: View {
     }
 
     private var settingsHeader: some View {
-        VStack(alignment: .leading, spacing: 32) {
+        VStack(alignment: .leading, spacing: 28) {
             Button {
                 dismiss()
             } label: {
@@ -93,21 +93,11 @@ struct SettingsView: View {
             NavigationLink {
                 RecipientManagementView()
             } label: {
-                SettingsNavigationRow(showIcon: false, showsDivider: true) {
-                    HStack(spacing: 12) {
-                        RecipientAvatarView(fileName: selectedRecipient?.profileImageName, size: 48)
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(caregiverDisplayName)
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(.primary)
-
-                            Text("부모(모)")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(AICOTheme.textGray)
-                        }
-                    }
-                }
+                SettingsProfileRow(
+                    title: caregiverDisplayName,
+                    subtitle: "부모(모)",
+                    imageName: selectedRecipient?.profileImageName
+                )
             }
             .buttonStyle(.plain)
 
@@ -282,6 +272,39 @@ private struct SettingsCard<Content: View>: View {
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 0)
+    }
+}
+
+private struct SettingsProfileRow: View {
+    let title: String
+    let subtitle: String
+    let imageName: String?
+
+    var body: some View {
+        HStack(spacing: 14) {
+            RecipientAvatarView(fileName: imageName, size: 58)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text(subtitle)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(AICOTheme.textGray)
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(AICOTheme.textGray)
+        }
+        .frame(maxWidth: .infinity, minHeight: 82, alignment: .leading)
+        .overlay(alignment: .bottom) {
+            SettingsDivider()
+        }
     }
 }
 
