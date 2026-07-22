@@ -112,11 +112,11 @@ struct ReportView: View {
     }
 
     private var currentRecords: [RecordEntry] {
-        selectedRecipientRecords.filter { selectedPeriod.contains($0.createdAt) }
+        selectedRecipientRecords.filter { selectedPeriod.contains($0.effectiveRecordDate) }
     }
 
     private var previousPeriodRecords: [RecordEntry] {
-        selectedRecipientRecords.filter { selectedPeriod.containsPreviousPeriod($0.createdAt) }
+        selectedRecipientRecords.filter { selectedPeriod.containsPreviousPeriod($0.effectiveRecordDate) }
     }
 
     private var selectedRecipientRecords: [RecordEntry] {
@@ -336,7 +336,7 @@ private enum ReportCalculator {
         let labels = ["일", "월", "화", "수", "목", "금", "토"]
         let calendar = Calendar.current
         let counts = Dictionary(grouping: records) { record in
-            calendar.component(.weekday, from: record.createdAt) - 1
+            calendar.component(.weekday, from: record.effectiveRecordDate) - 1
         }
         let maxCount = max(counts.values.map(\.count).max() ?? 0, 1)
 
@@ -348,7 +348,7 @@ private enum ReportCalculator {
     static func weekOfMonthCounts(records: [RecordEntry]) -> [ReportBarItem] {
         let calendar = Calendar.current
         let counts = Dictionary(grouping: records) { record in
-            calendar.component(.weekOfMonth, from: record.createdAt)
+            calendar.component(.weekOfMonth, from: record.effectiveRecordDate)
         }
         let maxCount = max(counts.values.map(\.count).max() ?? 0, 1)
 

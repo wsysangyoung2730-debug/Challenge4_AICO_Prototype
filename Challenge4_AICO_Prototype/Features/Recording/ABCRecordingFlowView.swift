@@ -684,7 +684,8 @@ struct ABCRecordingFlowView: View {
         let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
         let record = RecordEntry(
             recipientId: currentRecipient.id,
-            createdAt: selectedDate,
+            createdAt: Date(),
+            recordDate: selectedDate,
             antecedentCategories: Array(selectedAntecedents).sorted(),
             behaviorCategories: Array(selectedBehaviors).sorted(),
             consequenceCategories: Array(selectedConsequences).sorted(),

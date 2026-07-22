@@ -22,7 +22,7 @@ struct ArchiveRecordCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(record.createdAt.formatted(.dateTime.year().month(.twoDigits).day(.twoDigits).hour().minute()))
+                Text(record.effectiveRecordDate.formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
                     .font(.caption)
                     .foregroundStyle(AICOTheme.textGray)
                     .lineLimit(1)
