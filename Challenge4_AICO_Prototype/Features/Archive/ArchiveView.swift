@@ -161,12 +161,18 @@ struct ArchiveView: View {
         } label: {
             HStack(spacing: 4) {
                 Text(sortOrder.rawValue)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
+
                 Image(systemName: "chevron.down")
                     .font(.caption)
             }
             .font(.subheadline)
             .fontWeight(.semibold)
             .foregroundStyle(AICOTheme.textGray)
+            .fixedSize(horizontal: true, vertical: false)
+            .frame(width: 76, alignment: .trailing)
+            .contentShape(Rectangle())
         }
     }
 
