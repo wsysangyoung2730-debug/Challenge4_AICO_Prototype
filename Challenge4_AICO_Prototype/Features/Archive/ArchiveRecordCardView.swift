@@ -11,24 +11,21 @@ struct ArchiveRecordCardView: View {
     private var stageSummaries: [ArchiveCardStageSummary] {
         [
             ArchiveCardStageSummary(stage: "A", values: record.antecedentCategories),
-            ArchiveCardStageSummary(stage: "B", values: record.behaviorCategories),
             ArchiveCardStageSummary(stage: "C", values: record.consequenceCategories)
         ]
         .filter { !$0.values.isEmpty }
-        .prefix(2)
-        .map { $0 }
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 24) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(record.createdAt.formatted(.dateTime.year().month(.twoDigits).day(.twoDigits).hour().minute()))
-                    .font(.caption)
+                Text(ArchiveRecordDateFormatter.string(from: record.effectiveRecordDate))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(AICOTheme.textGray)
                     .lineLimit(1)
 
                 Text(title)
-                    .font(.headline)
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
             }
@@ -39,19 +36,26 @@ struct ArchiveRecordCardView: View {
                 }
             }
 
-            if let note = record.note, !note.isEmpty {
-                Text(note)
-                    .font(.subheadline)
-                    .foregroundStyle(AICOTheme.darkGray)
-                    .lineLimit(1)
-            }
+            Text(displayNote)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(AICOTheme.darkGray)
+                .lineLimit(1)
         }
         .padding(16)
-        .frame(maxWidth: .infinity, minHeight: 206, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 223, alignment: .topLeading)
         .background(AICOTheme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 24))
         .shadow(color: .black.opacity(0.04), radius: 6)
         .accessibilityElement(children: .combine)
+    }
+
+    private var displayNote: String {
+        guard let note = record.note?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !note.isEmpty
+        else {
+            return "없음"
+        }
+        return note
     }
 }
 
@@ -61,15 +65,13 @@ private struct ArchiveStageChipRow: View {
     var body: some View {
         HStack(spacing: 4) {
             Text(summary.stage)
-                .font(.caption)
-                .fontWeight(.semibold)
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 30, height: 30)
                 .background(AICOTheme.primaryOrange, in: Circle())
 
             Text(summary.values.first ?? "")
-                .font(.caption)
-                .fontWeight(.semibold)
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(AICOTheme.primaryOrange)
                 .lineLimit(1)
                 .padding(.horizontal, 10)
@@ -77,6 +79,20 @@ private struct ArchiveStageChipRow: View {
                 .background(AICOTheme.primaryOrange.opacity(0.1), in: Capsule())
         }
     }
+}
+
+private enum ArchiveRecordDateFormatter {
+    static func string(from date: Date) -> String {
+        formatter.string(from: date)
+    }
+
+    private static let formatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "yyyy. MM. dd"
+        return formatter
+    }()
 }
 
 private struct ArchiveCardStageSummary: Identifiable {

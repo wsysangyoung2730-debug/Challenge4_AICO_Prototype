@@ -55,7 +55,7 @@ struct QuickRecordRecipientPickerView: View {
     private func todaySummary(for recipient: RecipientProfile) -> String {
         let calendar = Calendar.current
         let count = records.filter {
-            $0.recipientId == recipient.id && calendar.isDateInToday($0.createdAt)
+            $0.recipientId == recipient.id && calendar.isDateInToday($0.effectiveRecordDate)
         }.count
         return "오늘 기록 \(count)회"
     }

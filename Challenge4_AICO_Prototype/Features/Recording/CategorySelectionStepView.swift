@@ -6,7 +6,6 @@ struct CategorySelectionStepView: View {
     let helperText: String
     let categories: [RecordCategory]
     @Binding var selectedNames: Set<String>
-    @Binding var note: String
     let onAddCategory: () -> Void
 
     private let consequenceResponseNames = ["음식/음료 제공", "휴식 제공", "공간 이동", "안아줌", "거리둠", "그림/시각자료", "활동 전환"]
@@ -23,7 +22,6 @@ struct CategorySelectionStepView: View {
 
             categoryContent
 
-            additionalNoteField
         }
     }
 
@@ -74,20 +72,6 @@ struct CategorySelectionStepView: View {
     private func requiredLabel(_ title: String) -> some View {
         (Text(title).foregroundStyle(.primary) + Text(" *").foregroundStyle(AICOTheme.primaryOrange))
             .font(.system(size: 16, weight: .semibold))
-    }
-
-    private var additionalNoteField: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("추가 기록")
-                .font(.system(size: 16, weight: .semibold))
-
-            TextField("시간, 환경, 발언 내용, 현장에 있었던 사람 등", text: $note, axis: .vertical)
-                .lineLimit(2...4)
-                .font(.body)
-                .padding(16)
-                .background(Color(red: 0.918, green: 0.918, blue: 0.918))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-        }
     }
 
     private var responseCategories: [RecordCategory] {

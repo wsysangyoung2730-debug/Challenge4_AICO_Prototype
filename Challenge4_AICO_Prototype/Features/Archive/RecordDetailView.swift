@@ -59,7 +59,7 @@ struct RecordDetailView: View {
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
-            Text(record.createdAt.formatted(date: .complete, time: .shortened))
+            Text(record.effectiveRecordDate.formatted(date: .complete, time: .omitted))
                 .font(.subheadline)
                 .foregroundStyle(AICOTheme.textGray)
         }

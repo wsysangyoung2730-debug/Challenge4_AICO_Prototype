@@ -17,7 +17,7 @@ enum WidgetSnapshotBuilder {
 
         let calendar = Calendar.current
         let todayRecords = records.filter {
-            $0.recipientId == defaultRecipient.id && calendar.isDateInToday($0.createdAt)
+            $0.recipientId == defaultRecipient.id && calendar.isDateInToday($0.effectiveRecordDate)
         }
         let mostFrequentBehavior = topBehavior(in: todayRecords)
         let recipientNames = Dictionary(uniqueKeysWithValues: recipients.map { ($0.id, $0.nickname) })
@@ -27,7 +27,7 @@ enum WidgetSnapshotBuilder {
             .prefix(3)
             .map { record in
                 AICOWidgetRecordSummary(
-                    createdAt: record.createdAt,
+                    createdAt: record.effectiveRecordDate,
                     recipientName: recipientNames[record.recipientId] ?? "등록된 대상자",
                     behaviorSummary: record.behaviorCategories.first ?? "B단계 없음",
                     contextSummary: record.antecedentCategories.first
