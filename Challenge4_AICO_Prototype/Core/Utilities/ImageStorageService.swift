@@ -1,4 +1,7 @@
+import CoreTransferable
 import Foundation
+import PhotosUI
+import SwiftUI
 import UniformTypeIdentifiers
 import UIKit
 
@@ -37,6 +40,28 @@ enum ImageStorageService {
         let destinationURL = directory.appendingPathComponent(fileName)
         try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
         return fileName
+    }
+
+    static func saveMedia(
+        from item: PhotosPickerItem,
+        prefix: String
+    ) async throws -> String? {
+        if item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) {
+            guard let video = try await item.loadTransferable(type: StoredVideoTransfer.self) else {
+                return nil
+            }
+            defer { try? FileManager.default.removeItem(at: video.url) }
+            return try saveMediaFile(
+                at: video.url,
+                prefix: prefix,
+                fileExtension: video.url.pathExtension.isEmpty ? "mov" : video.url.pathExtension
+            )
+        }
+
+        guard let data = try await item.loadTransferable(type: Data.self) else {
+            return nil
+        }
+        return try saveImageData(data, prefix: prefix)
     }
 
     static func fileURL(for fileName: String?) -> URL? {
@@ -86,5 +111,22 @@ enum ImageStorageService {
             .lowercased()
             .filter { $0.isLetter || $0.isNumber }
         return sanitized.isEmpty ? "mov" : String(sanitized.prefix(10))
+    }
+}
+
+private struct StoredVideoTransfer: Transferable {
+    let url: URL
+
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(contentType: .movie) { video in
+            SentTransferredFile(video.url)
+        } importing: { received in
+            let fileExtension = received.file.pathExtension.isEmpty ? "mov" : received.file.pathExtension
+            let copyURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension(fileExtension)
+            try FileManager.default.copyItem(at: received.file, to: copyURL)
+            return StoredVideoTransfer(url: copyURL)
+        }
     }
 }

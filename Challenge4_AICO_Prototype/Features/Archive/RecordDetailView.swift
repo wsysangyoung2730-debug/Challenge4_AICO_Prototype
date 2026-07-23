@@ -1,9 +1,7 @@
 import AVKit
-import CoreTransferable
 import PhotosUI
 import SwiftData
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct RecordDetailView: View {
     @Environment(\.modelContext) private var modelContext
@@ -269,24 +267,10 @@ struct RecordDetailView: View {
         }
 
         do {
-            let newFileName: String
-
-            if selectedMediaItem.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) {
-                guard let video = try await selectedMediaItem.loadTransferable(type: PickedVideo.self) else {
-                    return
-                }
-                defer { try? FileManager.default.removeItem(at: video.url) }
-                newFileName = try ImageStorageService.saveMediaFile(
-                    at: video.url,
-                    prefix: "record",
-                    fileExtension: video.url.pathExtension.isEmpty ? "mov" : video.url.pathExtension
-                )
-            } else {
-                guard let data = try await selectedMediaItem.loadTransferable(type: Data.self) else {
-                    return
-                }
-                newFileName = try ImageStorageService.saveImageData(data, prefix: "record")
-            }
+            guard let newFileName = try await ImageStorageService.saveMedia(
+                from: selectedMediaItem,
+                prefix: "record"
+            ) else { return }
 
             if let mediaNameToReplace,
                let index = record.attachmentNames.firstIndex(of: mediaNameToReplace) {
@@ -452,23 +436,6 @@ private struct RecordVideoView: View {
         }
         .onDisappear {
             player?.pause()
-        }
-    }
-}
-
-private struct PickedVideo: Transferable {
-    let url: URL
-
-    static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(contentType: .movie) { video in
-            SentTransferredFile(video.url)
-        } importing: { received in
-            let fileExtension = received.file.pathExtension.isEmpty ? "mov" : received.file.pathExtension
-            let copyURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent(UUID().uuidString)
-                .appendingPathExtension(fileExtension)
-            try FileManager.default.copyItem(at: received.file, to: copyURL)
-            return PickedVideo(url: copyURL)
         }
     }
 }
