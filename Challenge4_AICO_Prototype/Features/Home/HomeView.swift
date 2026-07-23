@@ -236,7 +236,8 @@ struct HomeView: View {
                             NavigationLink {
                                 RecordDetailView(
                                     record: record,
-                                    recipientName: recipientName(for: record)
+                                    recipientName: recipientName(for: record),
+                                    recipientImageName: recipient(for: record)?.profileImageName
                                 )
                             } label: {
                                 RecentRecordPreviewCard(

@@ -192,7 +192,8 @@ struct ArchiveView: View {
                     NavigationLink {
                         RecordDetailView(
                             record: record,
-                            recipientName: recipientName(for: record)
+                            recipientName: recipientName(for: record),
+                            recipientImageName: recipient(for: record)?.profileImageName
                         )
                     } label: {
                         ArchiveRecordCardView(
@@ -215,7 +216,11 @@ struct ArchiveView: View {
     }
 
     private func recipientName(for record: RecordEntry) -> String {
-        recipients.first { $0.id == record.recipientId }?.nickname ?? "등록된 대상자"
+        recipient(for: record)?.nickname ?? "등록된 대상자"
+    }
+
+    private func recipient(for record: RecordEntry) -> RecipientProfile? {
+        recipients.first { $0.id == record.recipientId }
     }
 }
 
