@@ -3,6 +3,7 @@ import SwiftData
 enum SwiftDataContainer {
     static let shared: ModelContainer = {
         let schema = Schema([
+            CaregiverProfile.self,
             RecipientProfile.self,
             RecordEntry.self,
             RecordCategory.self

@@ -6,6 +6,7 @@ struct HomeView: View {
     @Environment(\.openURL) private var openURL
     @Query(sort: \RecordEntry.createdAt, order: .reverse) private var records: [RecordEntry]
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
+    @Query(sort: \CaregiverProfile.createdAt) private var caregivers: [CaregiverProfile]
 
     @State private var isHeroGreetingVisible = false
     @State private var isHeroCharacterVisible = false
@@ -36,8 +37,8 @@ struct HomeView: View {
         weeklyRecords.count
     }
 
-    private var selectedRecipientName: String {
-        selectedRecipient?.nickname ?? "카이"
+    private var caregiverName: String {
+        caregivers.first?.name ?? "보호자"
     }
 
     private let feedItems = [
@@ -137,7 +138,7 @@ struct HomeView: View {
 
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("\(selectedRecipientName)맘")
+                    Text(caregiverName)
                         .font(.system(size: 28, weight: .bold))
                         .foregroundStyle(AICOTheme.primaryOrange)
                     + Text(" 님,")
@@ -234,11 +235,7 @@ struct HomeView: View {
                     HStack(spacing: 12) {
                         ForEach(recentRecords) { record in
                             NavigationLink {
-                                RecordDetailView(
-                                    record: record,
-                                    recipientName: recipientName(for: record),
-                                    recipientImageName: recipient(for: record)?.profileImageName
-                                )
+                                RecordDetailView(record: record)
                             } label: {
                                 RecentRecordPreviewCard(
                                     record: record
@@ -312,7 +309,7 @@ struct HomeView: View {
     }
 
     private func recipientName(for record: RecordEntry) -> String {
-        recipient(for: record)?.nickname ?? selectedRecipientName
+        recipient(for: record)?.nickname ?? selectedRecipient?.nickname ?? "등록된 대상자"
     }
 
     private func recipient(for record: RecordEntry) -> RecipientProfile? {

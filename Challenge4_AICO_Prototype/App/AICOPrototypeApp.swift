@@ -16,11 +16,14 @@ struct AICOPrototypeApp: App {
 
 private struct RootView: View {
     @EnvironmentObject private var sessionState: AnonymousSessionState
+    @Query(sort: \CaregiverProfile.createdAt) private var caregivers: [CaregiverProfile]
     @State private var pendingDeepLink: AICODeepLink?
 
     var body: some View {
         Group {
-            if sessionState.hasSeenServiceIntro {
+            if caregivers.isEmpty {
+                CaregiverRegistrationView()
+            } else if sessionState.hasSeenServiceIntro {
                 MainTabView(pendingDeepLink: $pendingDeepLink)
             } else {
                 ServiceIntroView {

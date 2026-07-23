@@ -190,11 +190,7 @@ struct ArchiveView: View {
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(filteredRecords) { record in
                     NavigationLink {
-                        RecordDetailView(
-                            record: record,
-                            recipientName: recipientName(for: record),
-                            recipientImageName: recipient(for: record)?.profileImageName
-                        )
+                        RecordDetailView(record: record)
                     } label: {
                         ArchiveRecordCardView(
                             record: record,

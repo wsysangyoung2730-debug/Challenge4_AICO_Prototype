@@ -6,10 +6,9 @@ import SwiftUI
 struct RecordDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \CaregiverProfile.createdAt) private var caregivers: [CaregiverProfile]
 
     let record: RecordEntry
-    let recipientName: String
-    let recipientImageName: String?
 
     @State private var draftNote: String
     @State private var isEditingNote = false
@@ -23,14 +22,8 @@ struct RecordDetailView: View {
         "거리둠", "그림/시각자료", "활동 전환"
     ]
 
-    init(
-        record: RecordEntry,
-        recipientName: String,
-        recipientImageName: String? = nil
-    ) {
+    init(record: RecordEntry) {
         self.record = record
-        self.recipientName = recipientName
-        self.recipientImageName = recipientImageName
         _draftNote = State(initialValue: record.note ?? "")
     }
 
@@ -83,9 +76,9 @@ struct RecordDetailView: View {
     private var titleArea: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 8) {
-                recipientAvatar
+                caregiverAvatar
 
-                Text(recipientName)
+                Text(caregiver?.name ?? "보호자")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.primary)
 
@@ -101,8 +94,8 @@ struct RecordDetailView: View {
     }
 
     @ViewBuilder
-    private var recipientAvatar: some View {
-        if let image = ImageStorageService.image(for: recipientImageName) {
+    private var caregiverAvatar: some View {
+        if let image = ImageStorageService.image(for: caregiver?.profileImageName) {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
@@ -114,6 +107,10 @@ struct RecordDetailView: View {
                 .foregroundStyle(AICOTheme.primaryOrange)
                 .accessibilityHidden(true)
         }
+    }
+
+    private var caregiver: CaregiverProfile? {
+        caregivers.first
     }
 
     private var occurrenceDateRow: some View {
