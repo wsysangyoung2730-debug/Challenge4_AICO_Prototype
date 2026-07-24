@@ -1,196 +1,438 @@
-import SwiftUI
+import AVKit
+import PhotosUI
 import SwiftData
+import SwiftUI
 
 struct RecordDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @State private var isShowingDeleteAlert = false
+    @Query(sort: \CaregiverProfile.createdAt) private var caregivers: [CaregiverProfile]
 
     let record: RecordEntry
-    let recipientName: String
+
+    @State private var draftNote: String
+    @State private var isEditingNote = false
+    @State private var isShowingDeleteAlert = false
+    @State private var isShowingMediaPicker = false
+    @State private var selectedMediaItem: PhotosPickerItem?
+    @State private var mediaNameToReplace: String?
+
+    private let consequenceResponseNames: Set<String> = [
+        "음식/음료 제공", "휴식 제공", "공간 이동", "안아줌",
+        "거리둠", "그림/시각자료", "활동 전환"
+    ]
+
+    init(record: RecordEntry) {
+        self.record = record
+        _draftNote = State(initialValue: record.note ?? "")
+    }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: AICOTheme.sectionSpacing) {
-                header
-
-                detailSection(
-                    title: "[A단계] 어떤 상황이었나요?",
-                    categories: record.antecedentCategories
-                )
-
-                detailSection(
-                    title: "[B단계] 어떤 행동이 있었나요?",
-                    categories: record.behaviorCategories
-                )
-
-                detailSection(
-                    title: "[C단계] 어떻게 대응했고 결과는 어땠나요?",
-                    categories: record.consequenceCategories
-                )
-
-                if let note = record.note, !note.isEmpty {
-                    noteSection(note)
-                }
-
-                if !record.attachmentNames.isEmpty {
-                    attachmentSection
-                }
-
-                deleteButton
+            VStack(alignment: .leading, spacing: 32) {
+                titleArea
+                occurrenceDateRow
+                categoryCard
+                noteSection
+                mediaSection
             }
-            .padding(AICOTheme.screenPadding)
+            .padding(.horizontal, 24)
+            .padding(.top, 16)
+            .padding(.bottom, 32)
         }
-        .navigationTitle("기록 상세")
-        .background(AICOTheme.softBackground)
+        .scrollIndicators(.hidden)
+        .background(AICOTheme.appBackground)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(role: .destructive) {
+                    isShowingDeleteAlert = true
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .accessibilityLabel("기록 삭제")
+            }
+        }
+        .photosPicker(
+            isPresented: $isShowingMediaPicker,
+            selection: $selectedMediaItem,
+            matching: .any(of: [.images, .videos])
+        )
+        .onChange(of: selectedMediaItem) {
+            Task { await saveSelectedMedia() }
+        }
         .alert("이 기록을 삭제할까요?", isPresented: $isShowingDeleteAlert) {
             Button("취소", role: .cancel) { }
             Button("삭제", role: .destructive) {
                 deleteRecord()
             }
         } message: {
-            Text("삭제하면 이 기록은 되돌릴 수 없어요.")
+            Text("삭제하면 이 기록과 첨부 파일은 되돌릴 수 없어요.")
         }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(recipientName)
-                .font(.largeTitle)
-                .fontWeight(.bold)
+    private var titleArea: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 8) {
+                caregiverAvatar
 
-            Text(record.effectiveRecordDate.formatted(date: .complete, time: .omitted))
-                .font(.subheadline)
-                .foregroundStyle(AICOTheme.textGray)
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AICOTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
-    }
+                Text(caregiver?.name ?? "보호자")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.primary)
 
-    private func detailSection(title: String, categories: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.headline)
-
-            if categories.isEmpty {
-                Text("선택된 항목이 없어요.")
-                    .font(.subheadline)
+                Text("· \(Self.dateFormatter.string(from: record.createdAt))")
+                    .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(AICOTheme.textGray)
-            } else {
-                FlowChipLayout(items: categories)
             }
+
+            Text(record.behaviorCategories.first ?? "행동 기록")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(.primary)
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AICOTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
     }
 
-    private func noteSection(_ note: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("자유 메모")
-                .font(.headline)
+    @ViewBuilder
+    private var caregiverAvatar: some View {
+        if let image = ImageStorageService.image(for: caregiver?.profileImageName) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 30, height: 30)
+                .clipShape(Circle())
+        } else {
+            Image(systemName: "person.crop.circle.fill")
+                .font(.system(size: 30))
+                .foregroundStyle(AICOTheme.primaryOrange)
+                .accessibilityHidden(true)
+        }
+    }
 
-            Text(note)
-                .font(.body)
+    private var caregiver: CaregiverProfile? {
+        caregivers.first
+    }
+
+    private var occurrenceDateRow: some View {
+        HStack {
+            Text("상황 발생일")
+                .font(.system(size: 18, weight: .semibold))
+
+            Spacer()
+
+            Text(Self.dateFormatter.string(from: record.effectiveRecordDate))
+                .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(AICOTheme.textGray)
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AICOTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
     }
 
-    private var attachmentSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("첨부 사진")
-                .font(.headline)
+    private var categoryCard: some View {
+        VStack(spacing: 16) {
+            categoryRow(title: "선행 상황", value: record.antecedentCategories.first)
+            categoryRow(title: "행동", value: record.behaviorCategories.first)
+            categoryRow(title: "보호자 대응", value: responseCategory)
+            categoryRow(title: "대응 결과", value: resultCategory)
+        }
+        .padding(16)
+        .background(AICOTheme.cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 6)
+    }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(record.attachmentNames, id: \.self) { fileName in
-                        if let image = ImageStorageService.image(for: fileName) {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 96, height: 96)
-                                .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
-                        } else {
-                            RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
-                                .fill(AICOTheme.softOrangeBackground)
-                                .frame(width: 96, height: 96)
-                                .overlay {
-                                    Image(systemName: "photo")
-                                        .foregroundStyle(AICOTheme.primaryOrange)
-                                }
-                        }
+    private func categoryRow(title: String, value: String?) -> some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(.system(size: 18, weight: .semibold))
+
+            Spacer(minLength: 8)
+
+            Text(value ?? "없음")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(value == nil ? AICOTheme.textGray : AICOTheme.primaryOrange)
+                .multilineTextAlignment(.trailing)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    value == nil ? Color.clear : AICOTheme.primaryOrange.opacity(0.1),
+                    in: Capsule()
+                )
+        }
+    }
+
+    private var noteSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("추가 기록")
+                    .font(.system(size: 18, weight: .semibold))
+
+                Spacer()
+
+                Button(isEditingNote ? "완료" : "편집") {
+                    if isEditingNote {
+                        saveNote()
+                    } else {
+                        isEditingNote = true
                     }
                 }
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(isEditingNote ? AICOTheme.primaryOrange : AICOTheme.textGray)
             }
+
+            Group {
+                if isEditingNote {
+                    TextEditor(text: $draftNote)
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 88)
+                } else {
+                    Text(displayNote)
+                        .foregroundStyle(AICOTheme.darkGray)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .topLeading)
+                }
+            }
+            .font(.system(size: 16, weight: .medium))
+            .padding(16)
+            .background(AICOTheme.cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AICOTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
     }
 
-    private var deleteButton: some View {
-        Button {
-            isShowingDeleteAlert = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "trash")
-                    .font(.subheadline)
-
-                Text("이 기록 삭제하기")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+    @ViewBuilder
+    private var mediaSection: some View {
+        if let fileName = record.attachmentNames.first {
+            RecordMediaView(
+                fileName: fileName,
+                onReplace: {
+                    mediaNameToReplace = fileName
+                    isShowingMediaPicker = true
+                },
+                onDelete: {
+                    deleteMedia(named: fileName)
+                }
+            )
+        } else {
+            Button {
+                mediaNameToReplace = nil
+                isShowingMediaPicker = true
+            } label: {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color(.separator), lineWidth: 1)
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(16 / 9, contentMode: .fit)
+                    .overlay {
+                        Image(systemName: "camera")
+                            .font(.system(size: 22, weight: .medium))
+                            .foregroundStyle(AICOTheme.textGray)
+                            .frame(width: 48, height: 48)
+                    }
             }
-            .foregroundStyle(.red)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(Color.red.opacity(0.08))
-            .overlay {
-                RoundedRectangle(cornerRadius: AICOTheme.cornerRadius)
-                    .stroke(Color.red.opacity(0.22), lineWidth: 1)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: AICOTheme.cornerRadius))
+            .buttonStyle(.plain)
+            .accessibilityLabel("사진 또는 영상 등록")
         }
-        .buttonStyle(.plain)
-        .padding(.top, 4)
+    }
+
+    private var responseCategory: String? {
+        record.consequenceCategories.first { consequenceResponseNames.contains($0) }
+    }
+
+    private var resultCategory: String? {
+        record.consequenceCategories.first { !consequenceResponseNames.contains($0) }
+    }
+
+    private var displayNote: String {
+        let trimmed = draftNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "추가 기록이 없어요." : trimmed
+    }
+
+    private func saveNote() {
+        let trimmed = draftNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        record.note = trimmed.isEmpty ? nil : trimmed
+        draftNote = trimmed
+        isEditingNote = false
+        saveModelContext()
+    }
+
+    private func deleteMedia(named fileName: String) {
+        record.attachmentNames.removeAll { $0 == fileName }
+        ImageStorageService.deleteImage(named: fileName)
+        saveModelContext()
+    }
+
+    @MainActor
+    private func saveSelectedMedia() async {
+        guard let selectedMediaItem else { return }
+        defer {
+            self.selectedMediaItem = nil
+            mediaNameToReplace = nil
+        }
+
+        do {
+            guard let newFileName = try await ImageStorageService.saveMedia(
+                from: selectedMediaItem,
+                prefix: "record"
+            ) else { return }
+
+            if let mediaNameToReplace,
+               let index = record.attachmentNames.firstIndex(of: mediaNameToReplace) {
+                record.attachmentNames[index] = newFileName
+                ImageStorageService.deleteImage(named: mediaNameToReplace)
+            } else {
+                record.attachmentNames = [newFileName]
+            }
+
+            saveModelContext()
+        } catch {
+            assertionFailure("Failed to save selected media: \(error.localizedDescription)")
+        }
     }
 
     private func deleteRecord() {
+        record.attachmentNames.forEach { ImageStorageService.deleteImage(named: $0) }
         modelContext.delete(record)
+        saveModelContext()
+        dismiss()
+    }
 
+    private func saveModelContext() {
         do {
             try modelContext.save()
         } catch {
-            assertionFailure("Failed to delete record: \(error.localizedDescription)")
+            assertionFailure("Failed to save record: \(error.localizedDescription)")
         }
+    }
 
-        dismiss()
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "yyyy. MM. dd"
+        return formatter
+    }()
+}
+
+private struct RecordMediaView: View {
+    let fileName: String
+    let onReplace: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        Group {
+            if ImageStorageService.isVideo(fileName) {
+                RecordVideoView(
+                    fileName: fileName,
+                    onReplace: onReplace,
+                    onDelete: onDelete
+                )
+            } else if let image = ImageStorageService.image(for: fileName) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(16 / 9, contentMode: .fit)
+                    .clipped()
+                    .overlay(alignment: .topTrailing) {
+                        mediaMenu
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            } else {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(AICOTheme.cardGray)
+                    .aspectRatio(16 / 9, contentMode: .fit)
+                    .overlay {
+                        Image(systemName: "photo")
+                            .foregroundStyle(AICOTheme.textGray)
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        mediaMenu
+                    }
+            }
+        }
+    }
+
+    private var mediaMenu: some View {
+        Menu {
+            Button {
+                onReplace()
+            } label: {
+                Label("사진 보관함", systemImage: "photo.on.rectangle")
+            }
+
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Label("삭제", systemImage: "trash")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("첨부 파일 메뉴")
     }
 }
 
-private struct FlowChipLayout: View {
-    let items: [String]
+private struct RecordVideoView: View {
+    let fileName: String
+    let onReplace: () -> Void
+    let onDelete: () -> Void
+
+    @State private var player: AVPlayer?
+    @State private var isPlaying = false
 
     var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 8)], alignment: .leading, spacing: 8) {
-            ForEach(items, id: \.self) { item in
-                Text(item)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(AICOTheme.primaryOrange)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(AICOTheme.primaryOrange.opacity(0.1))
-                    .clipShape(Capsule())
+        ZStack {
+            if let player {
+                VideoPlayer(player: player)
+            } else {
+                AICOTheme.cardGray
             }
+
+            if !isPlaying {
+                Color.black.opacity(0.5)
+
+                Button {
+                    isPlaying = true
+                    player?.play()
+                } label: {
+                    Image(systemName: "play")
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundStyle(.white)
+                        .frame(width: 48, height: 48)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("영상 재생")
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .aspectRatio(16 / 9, contentMode: .fit)
+        .overlay(alignment: .topTrailing) {
+            Menu {
+                Button {
+                    onReplace()
+                } label: {
+                    Label("사진 보관함", systemImage: "photo.on.rectangle")
+                }
+
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("삭제", systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("첨부 파일 메뉴")
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .task {
+            guard player == nil, let url = ImageStorageService.fileURL(for: fileName) else { return }
+            player = AVPlayer(url: url)
+        }
+        .onDisappear {
+            player?.pause()
         }
     }
 }

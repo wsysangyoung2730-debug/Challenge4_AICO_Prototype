@@ -1,3 +1,4 @@
+import AVKit
 import PhotosUI
 import SwiftData
 import SwiftUI
@@ -433,14 +434,9 @@ struct ABCRecordingFlowView: View {
                 Text("사진/영상 등록")
                     .font(.system(size: 18, weight: .semibold))
 
-                if let fileName = attachmentNames.last,
-                   let image = ImageStorageService.image(for: fileName) {
+                if let fileName = attachmentNames.last {
                     ZStack {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .clipped()
+                        RecordingMediaPreview(fileName: fileName)
 
                         Color.black.opacity(0.5)
 
@@ -463,7 +459,10 @@ struct ABCRecordingFlowView: View {
                             .stroke(Color(red: 0.855, green: 0.855, blue: 0.855), lineWidth: 1)
                     }
                 } else {
-                    PhotosPicker(selection: $selectedAttachmentItem, matching: .images) {
+                    PhotosPicker(
+                        selection: $selectedAttachmentItem,
+                        matching: .any(of: [.images, .videos])
+                    ) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 24)
                                 .stroke(Color(red: 0.855, green: 0.855, blue: 0.855), lineWidth: 1)
@@ -781,12 +780,49 @@ struct ABCRecordingFlowView: View {
     @MainActor
     private func saveSelectedAttachment() async {
         guard let selectedAttachmentItem else { return }
-        guard let data = try? await selectedAttachmentItem.loadTransferable(type: Data.self) else { return }
-        if let fileName = try? ImageStorageService.saveImageData(data, prefix: "record") {
+        if let fileName = try? await ImageStorageService.saveMedia(
+            from: selectedAttachmentItem,
+            prefix: "record"
+        ) {
             removeAttachments()
             attachmentNames = [fileName]
         }
         self.selectedAttachmentItem = nil
+    }
+}
+
+private struct RecordingMediaPreview: View {
+    let fileName: String
+
+    @State private var player: AVPlayer?
+
+    var body: some View {
+        Group {
+            if ImageStorageService.isVideo(fileName) {
+                if let player {
+                    VideoPlayer(player: player)
+                } else {
+                    Color.black
+                }
+            } else if let image = ImageStorageService.image(for: fileName) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                AICOTheme.cardGray
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
+        .task {
+            guard ImageStorageService.isVideo(fileName),
+                  let url = ImageStorageService.fileURL(for: fileName)
+            else { return }
+            player = AVPlayer(url: url)
+        }
+        .onDisappear {
+            player?.pause()
+        }
     }
 }
 

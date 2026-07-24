@@ -61,6 +61,8 @@
 		1000000000000000000000B8 /* SharedPhotoAttachmentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000130 /* SharedPhotoAttachmentStore.swift */; };
 		1000000000000000000000B9 /* AICOShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 10000000000000000000012D /* AICOShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1000000000000000000000BA /* AICOAlertView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000135 /* AICOAlertView.swift */; };
+		1000000000000000000000BB /* CaregiverProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000136 /* CaregiverProfile.swift */; };
+		1000000000000000000000BC /* CaregiverRegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000137 /* CaregiverRegistrationView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -116,6 +118,8 @@
 		100000000000000000000111 /* PlaceholderCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderCardView.swift; sourceTree = "<group>"; };
 		100000000000000000000112 /* AICOTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICOTheme.swift; sourceTree = "<group>"; };
 		100000000000000000000135 /* AICOAlertView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICOAlertView.swift; sourceTree = "<group>"; };
+		100000000000000000000136 /* CaregiverProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaregiverProfile.swift; sourceTree = "<group>"; };
+		100000000000000000000137 /* CaregiverRegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaregiverRegistrationView.swift; sourceTree = "<group>"; };
 		100000000000000000000113 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		100000000000000000000114 /* RecipientRegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipientRegistrationView.swift; sourceTree = "<group>"; };
 		100000000000000000000115 /* RecordingTutorialOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingTutorialOverlayView.swift; sourceTree = "<group>"; };
@@ -276,6 +280,7 @@
 		100000000000000000000212 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				100000000000000000000136 /* CaregiverProfile.swift */,
 				100000000000000000000103 /* RecipientProfile.swift */,
 				100000000000000000000104 /* RecordEntry.swift */,
 				100000000000000000000105 /* RecordCategory.swift */,
@@ -348,6 +353,7 @@
 		100000000000000000000221 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				100000000000000000000137 /* CaregiverRegistrationView.swift */,
 				100000000000000000000109 /* ServiceIntroView.swift */,
 			);
 			path = Onboarding;
@@ -574,6 +580,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				100000000000000000000001 /* AICOPrototypeApp.swift in Sources */,
+				1000000000000000000000BB /* CaregiverProfile.swift in Sources */,
+				1000000000000000000000BC /* CaregiverRegistrationView.swift in Sources */,
 				100000000000000000000002 /* AppConstants.swift in Sources */,
 				100000000000000000000003 /* RecipientProfile.swift in Sources */,
 				100000000000000000000004 /* RecordEntry.swift in Sources */,

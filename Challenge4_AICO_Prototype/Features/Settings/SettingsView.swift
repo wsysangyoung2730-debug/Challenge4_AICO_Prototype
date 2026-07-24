@@ -9,6 +9,7 @@ struct SettingsView: View {
     @Query(sort: \RecipientProfile.createdAt) private var recipients: [RecipientProfile]
     @Query(sort: \RecordEntry.createdAt) private var records: [RecordEntry]
     @Query(sort: \RecordCategory.createdAt) private var categories: [RecordCategory]
+    @Query(sort: \CaregiverProfile.createdAt) private var caregivers: [CaregiverProfile]
 
     @AppStorage("aico.notificationsEnabled") private var notificationsEnabled = false
     @State private var showsAppDataResetAlert = false
@@ -52,19 +53,12 @@ struct SettingsView: View {
                 resetLocalData()
             }
         } message: {
-            Text("대상자, 기록, 카테고리 등 로컬 프로토타입 데이터가 삭제됩니다. 이 작업은 되돌릴 수 없어요.")
+            Text("보호자, 대상자, 기록, 카테고리 등 로컬 데이터가 삭제됩니다. 이 작업은 되돌릴 수 없어요.")
         }
-    }
-
-    private var selectedRecipient: RecipientProfile? {
-        recipients.first { $0.id == sessionState.selectedRecipientID } ?? recipients.first
     }
 
     private var caregiverDisplayName: String {
-        if let selectedRecipient {
-            return "\(selectedRecipient.nickname)맘"
-        }
-        return "아이코 보호자"
+        caregivers.first?.name ?? "보호자"
     }
 
     private var settingsHeader: some View {
@@ -90,8 +84,8 @@ struct SettingsView: View {
             } label: {
                 SettingsProfileRow(
                     title: caregiverDisplayName,
-                    subtitle: "부모(모)",
-                    imageName: selectedRecipient?.profileImageName
+                    subtitle: caregivers.first?.relationship ?? "관계 미설정",
+                    imageName: caregivers.first?.profileImageName
                 )
             }
             .buttonStyle(.plain)
@@ -203,9 +197,11 @@ struct SettingsView: View {
     private func resetLocalData() {
         records.flatMap(\.attachmentNames).forEach { ImageStorageService.deleteImage(named: $0) }
         recipients.map(\.profileImageName).forEach { ImageStorageService.deleteImage(named: $0) }
+        caregivers.map(\.profileImageName).forEach { ImageStorageService.deleteImage(named: $0) }
         records.forEach(modelContext.delete)
         recipients.forEach(modelContext.delete)
         categories.forEach(modelContext.delete)
+        caregivers.forEach(modelContext.delete)
         try? modelContext.save()
 
         sessionState.hasSeenHomeTutorial = false

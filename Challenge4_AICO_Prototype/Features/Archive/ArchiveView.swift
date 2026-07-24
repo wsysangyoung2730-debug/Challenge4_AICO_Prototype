@@ -190,10 +190,7 @@ struct ArchiveView: View {
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(filteredRecords) { record in
                     NavigationLink {
-                        RecordDetailView(
-                            record: record,
-                            recipientName: recipientName(for: record)
-                        )
+                        RecordDetailView(record: record)
                     } label: {
                         ArchiveRecordCardView(
                             record: record,
@@ -215,7 +212,11 @@ struct ArchiveView: View {
     }
 
     private func recipientName(for record: RecordEntry) -> String {
-        recipients.first { $0.id == record.recipientId }?.nickname ?? "등록된 대상자"
+        recipient(for: record)?.nickname ?? "등록된 대상자"
+    }
+
+    private func recipient(for record: RecordEntry) -> RecipientProfile? {
+        recipients.first { $0.id == record.recipientId }
     }
 }
 
