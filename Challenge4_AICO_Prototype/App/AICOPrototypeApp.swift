@@ -1,6 +1,7 @@
 import CloudKit
 import SwiftData
 import SwiftUI
+import UserNotifications
 
 @main
 struct AICOPrototypeApp: App {
@@ -16,17 +17,28 @@ struct AICOPrototypeApp: App {
     }
 }
 
-final class AppDelegate: NSObject, UIApplicationDelegate {
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         application.registerForRemoteNotifications()
+        UNUserNotificationCenter.current().delegate = self
+        LocalNotifier.requestAuthorization()
         Task {
             await GuardianSyncManager.registerSubscriptionIfNeeded()
             await GuardianAutoSync.sync()
         }
         return true
+    }
+
+    // 앱을 보고 있을 때도 배너가 뜨게 함
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
     
     func application(
@@ -88,7 +100,12 @@ final class SceneDelegate: NSObject, UIWindowSceneDelegate {
         Task { @MainActor in
             GuardianSyncStatus.shared.message = "공유 수락 처리 중…"
         }
-        
+
+        // 초대한 상대(소유자) 이름 - 알림에 사용
+        let ownerName = cloudKitShareMetadata.ownerIdentity.nameComponents
+            .map { PersonNameComponentsFormatter().string(from: $0) }
+            .flatMap { $0.isEmpty ? nil : $0 } ?? "다른 보호자"
+
         let container = CKContainer(identifier: GuardianSyncManager.containerID)
         let operation = CKAcceptSharesOperation(shareMetadatas: [cloudKitShareMetadata])
         operation.perShareResultBlock = { _, result in
@@ -104,6 +121,7 @@ final class SceneDelegate: NSObject, UIWindowSceneDelegate {
                 }
                 GuardianSyncStatus.shared.isConnected = true
                 GuardianSyncStatus.shared.message = "연결됐어요"
+                LocalNotifier.show(title: "보호자 공유", body: "\(ownerName)님과 연결됐어요")
                 await GuardianSyncManager.registerSubscriptionIfNeeded()
                 await GuardianAutoSync.sync()
             }
@@ -416,6 +434,24 @@ enum GuardianSyncManager {
 
 // MARK: - 자동 동기화 서비스
 
+// 화면에 뜨는 로컬 알림 (연결 알림, 새 기록 추가알림)
+enum LocalNotifier {
+    static func requestAuthorization() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, error in
+            if let error { print("알림 권한 요청 실패:", error) }
+        }
+    }
+
+    static func show(title: String, body: String) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+}
+
 // 보호자 공유 연결/동기화 상태
 @MainActor
 final class GuardianSyncStatus: ObservableObject {
@@ -493,6 +529,18 @@ enum GuardianAutoSync {
             }
             try? context.save()
             status.message = "연결됨 · 방금 동기화했어요"
+
+            // 상대가 올린 새 기록이 실제로 들어왔을 때만 알림
+            if added > 0 {
+                let name = remote.last(where: { data in
+                    !localRecords.contains { $0.id == data.id }
+                })?.recipientName
+                let who = name.map { "\($0) " } ?? ""
+                LocalNotifier.show(
+                    title: "새 기록 도착",
+                    body: "\(who)기록 \(added)개가 상대 보호자로부터 공유됐어요"
+                )
+            }
             _ = (added, updated)
         } catch {
             print("자동 동기화 실패:", error)
